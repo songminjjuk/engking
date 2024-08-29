@@ -1,0 +1,85 @@
+.result-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    background-color: #fff;
+    padding: 20px;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+h2 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+p {
+    font-size: 1.25rem;
+    color: #666;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.audio-player-container {
+    margin-top: 30px;
+    text-align: center;
+    width: 100%;
+}
+
+.audio-player-container h3 {
+    font-size: 1.5rem;
+    color: #444;
+    margin-bottom: 20px; /* Increased space below the "Your Recording:" text */
+}
+
+audio {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    display: block;
+    border-radius: 10px;
+}
+
+.back-button {
+    margin-top: 30px;
+    background-color: #f7a8c5;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #ffddee;
+}
+
+.back-button:active {
+    background-color: #f7a8c5;
+}
+
+.send-button {
+    margin-top: 30px;
+    background-color: #f7a8c5;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.send-button:hover {
+    background-color: #ffddee;
+}
+
+.send-button:active {
+    background-color: #f7a8c5;
+}
