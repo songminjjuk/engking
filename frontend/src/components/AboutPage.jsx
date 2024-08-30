@@ -18,9 +18,9 @@ const Quiz = (props) => {
             <h2>{props.title}</h2>
             <h2 style={{marginTop: '30px', marginBottom: '30px', fontSize: '24px', textAlign: 'center'}}>난이도를 선택하세요 ! 🙌</h2>
             <div className="difficultybutton-grid">
-                <button className="title-button" onClick={() => handleDifficultyClick('상')}>상</button>
-                <button className="title-button" onClick={() => handleDifficultyClick('중')}>중</button>
-                <button className="title-button" onClick={() => handleDifficultyClick('하')}>하</button>
+                <button className="title-button" onClick={() => handleDifficultyClick('Hard')}>상</button>
+                <button className="title-button" onClick={() => handleDifficultyClick('Normal')}>중</button>
+                <button className="title-button" onClick={() => handleDifficultyClick('Easy')}>하</button>
             </div>
             </div>
         </section>
