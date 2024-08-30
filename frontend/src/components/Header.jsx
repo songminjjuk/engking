@@ -26,7 +26,7 @@ const Header = (props) => {
     <header id="headerType" className="header__wrap">
       <div className="header__inner">
         <div className="header__logo">
-          <NavLink to="/">이쿠조 <em>site</em></NavLink>
+          <NavLink to="/">이쿠조 <em>잉킹 EngKing</em></NavLink>
         </div>
         <nav className="header__menu">
           <ul>

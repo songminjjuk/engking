@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import bbongssoon from '../assets/img/bbongssoon.jpg';
-import micImage from '../assets/img/mic.png';
-import pauseImage from '../assets/img/pause.png';
+import usagi from '../assets/img/농담곰.jpeg';
 import '../assets/css/conv.css';
 
 const ConversationPage = () => {
@@ -14,38 +14,62 @@ const ConversationPage = () => {
     const [audioUrl, setAudioUrl] = useState(null);
     const [questionIndex, setQuestionIndex] = useState(0);
     const [currentText, setCurrentText] = useState('');
+    const [typingFinished, setTypingFinished] = useState(false);
+    const [questions, setQuestions] = useState([]);
+    const [chatRoomId, setChatRoomId] = useState('');
+    const [messageId, setMessageId] = useState('');
     const typingInterval = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
-    const questions = [
-        "  What’s something simple that brings you joy?",
-        "  If you could travel anywhere in the world, where would you go?",
-        "  What’s your favorite way to relax after a long day?",
-        "  Can you tell me about a recent challenge you faced and how you overcame it?",
-        "  What’s a skill you’d like to learn and why?"
-    ];
+    useEffect(() => {
+        const fetchFirstQuestion = async () => {
+            try {
+                const memberId = localStorage.getItem('userId'); // Retrieve member ID from localStorage
+                if (!memberId) {
+                    throw new Error('User ID is not available.');
+                }
+
+                const response = await axios.post('http://www.rapapa.site:8080/chat/firstquestion', {
+                    memberId: memberId,
+                    topic: title,
+                    difficulty: difficulty
+                });
+
+                const { chatRoomId, messageId, firstQeustion } = response.data;
+                setChatRoomId(chatRoomId);
+                setMessageId(messageId);
+                setQuestions([firstQeustion]);
+            } catch (error) {
+                console.error('Error fetching the first question:', error);
+            }
+        };
+
+        fetchFirstQuestion();
+    }, [title, difficulty]);
 
     useEffect(() => {
         if (questionIndex < questions.length) {
+            setTypingFinished(false);
             typeQuestion(questions[questionIndex]);
         }
-        return () => clearInterval(typingInterval.current); // Clean up the interval on unmount
-    }, [questionIndex]);
+        return () => clearInterval(typingInterval.current);
+    }, [questionIndex, questions]);
 
     const typeQuestion = (question) => {
         let charIndex = 0;
-        setCurrentText(''); // Reset current text
+        setCurrentText('');
         typingInterval.current = setInterval(() => {
             setCurrentText(prev => {
                 const newText = prev + question[charIndex];
                 if (charIndex === question.length - 1) {
                     clearInterval(typingInterval.current);
+                    setTypingFinished(true);
                 }
                 return newText;
             });
             charIndex++;
-        }, 50); // Adjust typing speed here
+        }, 50);
     };
 
     const handleMicClick = () => {
@@ -80,22 +104,33 @@ const ConversationPage = () => {
         };
     };
 
-    const handleSendClick = () => {
-        navigate('/convresult', {
-            state: {
-                audioUrl,
-                title,
-                difficulty
+    const handleSendClick = async () => {
+        if (audioUrl) {
+            try {
+                const response = await axios.post('http://www.rapapa.site:8080/chat/nextquestion', {
+                    memberId: localStorage.getItem('userId'), // Retrieve member ID from localStorage
+                    chatRoomId: chatRoomId,
+                    messageId: messageId,
+                    messageText: 'Audio response placeholder', // Replace with the actual transcribed text or some placeholder
+                });
+
+                const { messageId: newMessageId, nextQeustion } = response.data;
+                setMessageId(newMessageId);
+                setQuestions(prevQuestions => [...prevQuestions, nextQeustion]);
+                handleNextQuestion();
+            } catch (error) {
+                console.error('Error sending the audio response:', error);
             }
-        });
+        }
     };
 
     const handleNextQuestion = () => {
         if (questionIndex < questions.length - 1) {
             setQuestionIndex(prevIndex => prevIndex + 1);
-            setCurrentText(''); // Clear current text for the next question
+            setCurrentText('');
             setAudioUrl(null);
             setIsRecording(false);
+            setTypingFinished(false);
         }
     };
 
@@ -114,27 +149,34 @@ const ConversationPage = () => {
                         </div>
                     </div>
                 ))}
-                {questionIndex < questions.length && (
-                    <div className="conv-buttons-bubble">
-                        <div className="conv-button-container">
-                            <button
-                                className="conv-button"
-                                onClick={handleMicClick}
-                            >
-                                {isRecording ? 'Pause' : 'Start Recording'}
-                            </button>
-                            {audioUrl && (
-                                <div className="conv-audio-player">
-                                    <h3>Your Recording:</h3>
-                                    <audio controls src={audioUrl}></audio>
-                                </div>
-                            )}
-                            <button className="conv-button" onClick={handleSendClick}>
-                                Send
-                            </button>
-                            <button className="conv-button" onClick={handleNextQuestion}>
-                                Next Question
-                            </button>
+                {questionIndex < questions.length && typingFinished && (
+                    <div className="conv-message conv-user-message">
+                        <img
+                            src={usagi}  // User image
+                            alt="User"
+                            className="conv-user-image"
+                        />
+                        <div className="conv-user-message-content">
+                            <div className="conv-button-container">
+                                <button
+                                    className="conv-button"
+                                    onClick={handleMicClick}
+                                >
+                                    {isRecording ? 'Pause' : 'Start Recording'}
+                                </button>
+                                {audioUrl && (
+                                    <div className="conv-audio-player">
+                                        <h3>Your Recording:</h3>
+                                        <audio controls src={audioUrl}></audio>
+                                    </div>
+                                )}
+                                <button className="conv-button" onClick={handleSendClick}>
+                                    Send
+                                </button>
+                                <button className="conv-button" onClick={handleNextQuestion}>
+                                    Next Question
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
