@@ -45,7 +45,7 @@ class APIHandler:
         quiz_type = data.get('quiz_type', 'vocabulary')
         difficulty = data.get('difficulty', 'Normal')
         user_input = data.get('input', 'Please give me a quiz question.')
-
+        
         memory = self.memory_manager.get_memory(user_id, conversation_id)
         history = memory.load_memory_variables({}).get("history", "")
         prompt_template = self.prompt_generator.create_quiz_prompt(quiz_type, difficulty, history)
@@ -69,11 +69,12 @@ class APIHandler:
         user_input = data.get('input', 'Can you ask me a question?')
         difficulty = data.get('difficulty', 'Normal')
         scenario = data.get('scenario', 'coffee')
-
+        is_first_request = data.get('is_first_request', 'True')
         memory = self.memory_manager.get_memory(user_id, conversation_id)
         history = memory.load_memory_variables({}).get("history", "")
-        prompt_template = self.prompt_generator.create_chat_prompt(difficulty, scenario, history)
+        prompt_template = self.prompt_generator.create_chat_prompt(difficulty, scenario, history, is_first_request)
         prompt_text = prompt_template.format(input=user_input)
+        print("prompt_text: ", prompt_text)
         response = self.bedrock_client.invoke(prompt_text)
         response_content = response.content
         memory.save_context({"human": user_input}, {"ai": response_content})
@@ -92,11 +93,12 @@ class APIHandler:
         quiz_type = data.get('quiz_type', 'vocabulary')
         difficulty = data.get('difficulty', 'Normal')
         user_input = data.get('input', 'Please give me a quiz question.')
-
+        is_first_request = data.get('is_first_request', 'True')
         memory = self.memory_manager.get_memory(user_id, conversation_id)
         history = memory.load_memory_variables({}).get("history", "")
-        prompt_template = self.prompt_generator.create_quiz_prompt(quiz_type, difficulty, history)
+        prompt_template = self.prompt_generator.create_quiz_prompt(quiz_type, difficulty, history, is_first_request)
         prompt_text = prompt_template.format(input=user_input)
+        print("prompt_text: ", prompt_text)
         response = self.bedrock_client.invoke(prompt_text)
         response_content = response.content
         memory.save_context({"human": user_input}, {"ai": response_content})
@@ -172,11 +174,11 @@ class APIHandler:
         self.memory_manager.delete_memory(user_id, conversation_id)
         response_content = json.loads(response.content)
         print(response_content)
-        total_questions = response_content.get("total_questions")
-        correct_answers = response_content.get("correct_answers")
+        total_questions = int(response_content.get("total_questions"))
+        correct_answers = int(response_content.get("correct_answers"))
         score = (correct_answers / total_questions) * 100
         score = round(score, 1)  # 반올림
-        
+        score = str(score)
         return JSONResponse(content={
             "user_id": user_id,
             "conversation_id": conversation_id,

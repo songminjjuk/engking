@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from api_handler import APIHandler
-
+import uvicorn
 app = FastAPI()
 api_handler = APIHandler()
 
@@ -33,5 +33,4 @@ async def save_endpoint(request: Request):
     return await api_handler.save_endpoint(request)
 
 if __name__ == '__main__':
-    import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=5000)
