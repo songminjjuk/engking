@@ -239,7 +239,7 @@ async def chat_endpoint(request: Request):
     conversation_id = data.get('conversation_id')
     user_input = data.get('input', 'Can you ask me a question?')
     difficulty = data.get('difficulty', 'Normal')
-    scenario = data.get('scenario', '커피 주문하기')
+    scenario = data.get('scenario', 'coffee')
 
     return await chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input)
 
@@ -320,10 +320,11 @@ async def quiz_evaluate_endpoint(request: Request):
     print("response: ", response)
     response_content = json.loads(response.content)
     print("response_content: ", response_content)
-    total_questions = response_content.get("total_questions")
-    correct_answers = response_content.get("correct_answers")
+    total_questions = int(response_content.get("total_questions"))
+    correct_answers = int(response_content.get("correct_answers"))
     score = (total_questions/correct_answers) * 100
     score = round(score, 1) # 반올림
+    score = str(score)
     return JSONResponse(content={
         "user_id": user_id,
         "conversation_id": conversation_id,
