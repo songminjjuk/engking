@@ -102,7 +102,7 @@ public class MemberService {
         // entity를 responsedto에 저장해서 반환해라!!!
 
         //memberRepository.save(member);  // save의 인자가 반환값
-        return MemberResponseDto.from(memberRepository.save(member));
+        return MemberResponseDto.getEmail(memberRepository.save(member));
 
     }
 
@@ -110,6 +110,13 @@ public class MemberService {
         Member member=memberRepository.findById(id).orElseThrow(()->new IllegalArgumentException("Invalid member Id:" + id));
         memberRepository.delete(member);
 
+    }
+
+    public MemberResponseDto memberInfo(MemberRequestDto mrequestd){
+        String email=mrequestd.getEmail();
+        Member member=memberRepository.findByEmail(email).orElseThrow(()->new IllegalArgumentException("Invalid member Id:" + email));
+        //member.getEmail()을 response에 넣자
+        return MemberResponseDto.getInfo(member);  //responseDto를 반환
     }
 
 

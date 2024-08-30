@@ -31,13 +31,17 @@ public class MemberController {
         return ResponseEntity.ok(member);
     }
 
-    @GetMapping("/memberinfo")
-    public ResponseEntity<Member> memberList(@RequestParam String email) {
-        Member member = memberService.memberList(email);
-        return ResponseEntity.ok(member);
-    }
+    @GetMapping("/info")
+    public ResponseEntity<MemberResponseDto> memberInfo(@RequestParam String email) {
+        //Member member = memberService.memberList(email);
+        MemberRequestDto mrequestd= MemberRequestDto.builder().email(email).build();  //email을 가진 dto 생성
+        //dto로 요청을 보내고 응답dto를 받자
+        MemberResponseDto mrd=memberService.memberInfo(mrequestd);
 
-    // @GetMapping("")
+        return ResponseEntity.ok(mrd);
+    }  //email 관련 쿼리로 멤버 정보 조회
+
+
 
     @PatchMapping("/update")
     public ResponseEntity<MemberResponseDto> updateMember( @RequestBody MemberRequestDto memberRequestDto) {

@@ -4,10 +4,7 @@ package com.Ikuzo.EngKing.dto;
 import com.Ikuzo.EngKing.constant.Authority;
 import com.Ikuzo.EngKing.constant.Existence;
 import com.Ikuzo.EngKing.entity.Member;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -15,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -53,6 +51,8 @@ public class MemberRequestDto {
             this.profileImgUrl="https://www.nintendo.co.kr/character/kirby/assets/img/home/kirby-puffy.png";
         //}
     }
+
+
 
 
 }
