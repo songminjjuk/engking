@@ -65,7 +65,6 @@ def create_chat_prompt_template(difficulty, scenario, history):
         "music": "You are a music enthusiast engaging in a conversation about music. Discuss various genres, artists, or specific songs based on the user's interests."
     }
 
-
     difficulty_prompts = {
         "Easy": "Additionally, the difficulty level is Easy, Use simple and direct language. Keep your responses short and avoid complex details.",
         "Normal": "Additionally, the difficulty level is Normal, Use moderate language with some detail. Provide clear explanations but avoid overly complex terms.",
