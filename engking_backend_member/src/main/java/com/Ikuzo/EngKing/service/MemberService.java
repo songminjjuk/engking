@@ -79,13 +79,14 @@ public class MemberService {
         return member;
     }
 
-    public MemberResponseDto updateMember(Long id, MemberRequestDto memberRequestDto){
+    public MemberResponseDto updateMember(MemberRequestDto memberRequestDto){
         // 바뀐애들에 대해서만 할까? 아니면 그냥 다 할까?
         //json에서 null로 쏘면 아예 아무 작업 안 하도록 하는 방법!
         /********************************************************/
         // 사용자가 수정할 수 있는 필드에 대해서만 해주면 될듯
         //Member의 모든 필드에 대해 if문을 해줄 필요는 없을것 같으나 확인해보자!!!
         /********************************************************/
+        Long id=memberRequestDto.getId();
         Member member=memberRepository.findById(id).orElseThrow(()->new IllegalArgumentException("Invalid member Id:" + id));
         if(memberRequestDto.getEmail()!=null)  member.setEmail(memberRequestDto.getEmail());
         if(memberRequestDto.getPassword()!=null) {
@@ -102,6 +103,7 @@ public class MemberService {
 
         //memberRepository.save(member);  // save의 인자가 반환값
         return MemberResponseDto.from(memberRepository.save(member));
+
     }
 
     public void deleteMember(Long id){

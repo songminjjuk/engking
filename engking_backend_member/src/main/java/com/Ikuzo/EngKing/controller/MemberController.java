@@ -39,10 +39,10 @@ public class MemberController {
 
     // @GetMapping("")
 
-    @PatchMapping("/update/{id}")
-    public ResponseEntity<MemberResponseDto> updateMember(@PathVariable Long id, @RequestBody MemberRequestDto memberRequestDto) {
+    @PatchMapping("/update")
+    public ResponseEntity<MemberResponseDto> updateMember( @RequestBody MemberRequestDto memberRequestDto) {
         //Member member=memberService.updateMember(id,memberRequestDto);
-        MemberResponseDto mrd=memberService.updateMember(id,memberRequestDto);
+        MemberResponseDto mrd=memberService.updateMember(memberRequestDto);
         return ResponseEntity.ok(mrd);  // email이 반환될 것
 
         //return ResponseEntity.status(HttpStatus.NO_CONTENT).build(); // 수정 성공했지만 응답 본문 X. 204 No Content
@@ -50,8 +50,9 @@ public class MemberController {
         //ok의 인자로 Dto를 넣는 것이 안전하다!
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<MemberResponseDto> deleteMember(@PathVariable Long id) {
+    @DeleteMapping("/delete")
+    public ResponseEntity<MemberResponseDto> deleteMember(@RequestBody MemberRequestDto memberRequestDto) {
+        Long id=memberRequestDto.getId();
         memberService.deleteMember(id);
         return ResponseEntity.noContent().build();
     }
