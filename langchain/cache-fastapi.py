@@ -11,6 +11,7 @@ from datetime import datetime
 import uvicorn
 from langchain.schema import HumanMessage, AIMessage
 import redis
+
 app = FastAPI()
 quiz_example_output = """
     Example format:
@@ -31,7 +32,7 @@ redis_url = "redis://test.fcr1s2.ng.0001.apne1.cache.amazonaws.com:6379"
 def initialize_bedrock_client(model_id, region_name):
     return ChatBedrock(
         model_id=model_id,
-        model_kwargs=dict(temperature=0),
+        model_kwargs=dict(temperature=0.5),
         region_name=region_name,
         streaming=True,
         client=boto3.client("bedrock-runtime", region_name=region_name)
@@ -236,14 +237,19 @@ async def chat_evaluate_endpoint(request: Request):
     conversation_id = data.get('conversation_id')
     # user_name = data.get('user_name')
     memory = get_memory(user_id, conversation_id)
-
     if not memory.chat_memory.messages:
         return JSONResponse(content={"error": "No conversation history found"}, status_code=400)
-
+    messages = memory.chat_memory.messages
+    if messages and isinstance(messages[-1], AIMessage):
+        messages = messages[:-1]  # 마지막 메시지 제거
     conversation_text = "\n".join(
         f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
-        for message in memory.chat_memory.messages
+
+
+        #for message in memory.chat_memory.messages
+        for message in messages
     )
+
 
     print("conversation_text: ", conversation_text)
     chat_evaluation_prompt = f"""
@@ -291,10 +297,15 @@ async def quiz_evaluate_endpoint(request: Request):
 
     if not memory.chat_memory.messages:
         return JSONResponse(content={"error": "No quiz history found"}, status_code=400)
+    messages = memory.chat_memory.messages
+
+    if messages and isinstance(messages[-1], AIMessage):
+        messages = messages[:-1]
 
     conversation_text = "\n".join(
         f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
-        for message in memory.chat_memory.messages
+        #for message in memory.chat_memory.messages
+        for message in messages
     )
 
     print("conversation_text: ", conversation_text)

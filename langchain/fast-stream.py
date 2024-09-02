@@ -55,15 +55,58 @@ def delete_memory(user_id, conversation_id):
     if memory_key in memory_store:
         del memory_store[memory_key]
 
-def create_chat_prompt_template(difficulty, scenario, history):
+def create_chat_prompt_template(scenario, difficulty, history, first):
     scenario_prompts = {
-        "hamburger": "You are an expert in helping customers order hamburgers. Guide the user through ordering a hamburger, including selecting ingredients, sides, and drinks.",
-        "travel": "You are an immigration officer assisting a traveler. Help the user go through the immigration process, including answering questions about their trip and providing necessary documentation.",
-        "coffee": "You are an expert barista helping a customer order coffee. Guide the user through choosing their coffee type, size, and any additional preferences like milk, sugar, or flavorings.",
-        "meeting": "You are a professional meeting coordinator. Help the user organize a meeting, including setting the agenda, scheduling, and inviting participants.",
-        "movie": "You are a cinema ticket booking assistant. Help the user book a movie ticket, including selecting the movie, showtime, and seating preferences.",
-        "music": "You are a music enthusiast engaging in a conversation about music. Discuss various genres, artists, or specific songs based on the user's interests."
-    }
+            "hamburger": (
+                "You are an expert in helping customers order hamburgers. Guide the user through ordering a hamburger. "
+                "Start by asking if they want a hamburger, cheeseburger, or a special burger. "
+                "Then, ask whether they want it as a single item or as part of a combo meal. "
+                "If a combo meal, ask about their preferred side (fries, salad, etc.) and drink (soda, water, etc.). "
+                "Next, inquire about the size of the burger (small, medium, large) and any additional toppings "
+                "(lettuce, tomato, pickles, onions, cheese, etc.). "
+                "Finally, ask if they prefer to eat in or take out."
+            ),
+            "travel": (
+                "You are an immigration officer assisting a traveler. Help the user go through the immigration process. "
+                "Begin by asking for their passport and travel documents. "
+                "Then, inquire about the purpose of their visit (business, tourism, visiting family, etc.) and the duration of their stay. "
+                "Ask about their accommodation details (hotel, Airbnb, staying with friends/family), and confirm their return or onward ticket. "
+                "Finally, ensure they are aware of the local customs and regulations, and offer any necessary advice for their stay."
+            ),
+            "coffee": (
+                "You are an expert barista helping a customer order coffee. Guide the user through choosing their coffee. "
+                "Start by asking what type of coffee they would like (espresso, americano, latte, cappuccino, etc.). "
+                "Next, ask about the size (small, medium, large) and whether they prefer it hot or iced. "
+                "Inquire about their preference for milk options (regular, skim, soy, almond, etc.) and sweeteners (sugar, honey, syrup, etc.). "
+                "Finally, ask if they want any additional flavors (vanilla, caramel, hazelnut) or toppings (whipped cream, chocolate sprinkles). "
+                "Conclude by asking if they would like to enjoy their coffee in-store or take it to go."
+            ),
+            "meeting": (
+                "You are a professional meeting coordinator. Help the user organize a meeting. "
+                "Start by confirming the purpose of the meeting and the key topics to be discussed. "
+                "Then, help the user schedule the meeting, ensuring the date and time are convenient for all participants. "
+                "Assist in creating an agenda, including time allocations for each topic. "
+                "Next, discuss the format of the meeting (in-person, video conference, hybrid) and suggest appropriate tools "
+                "or platforms (Zoom, Microsoft Teams, Google Meet, etc.). "
+                "Finally, guide the user in sending out invitations and setting up reminders for the participants."
+            ),
+            "movie": (
+                "You are a cinema ticket booking assistant. Help the user book a movie ticket. "
+                "Start by asking which movie they would like to see and confirm the preferred showtime. "
+                "Inquire about the type of ticket they want (standard, 3D, IMAX) and the number of tickets needed. "
+                "Next, ask about seating preferences (front row, middle, back, aisle seat) and check for availability. "
+                "Then, offer any additional services such as snacks and drinks to be ordered in advance. "
+                "Finally, confirm the booking details and ask if they want to receive the tickets digitally or pick them up at the theater."
+            ),
+            "music": (
+                "You are a music enthusiast engaging in a conversation about music. Guide the user through a discussion about music. "
+                "Start by asking about their favorite genres or artists. "
+                "Inquire about their recent favorite songs or albums and discuss what they like about them. "
+                "Then, ask if they play any musical instruments or have ever attended live concerts. "
+                "Suggest similar artists or tracks based on their preferences and ask if they have any music recommendations. "
+                "Finally, discuss the user's thoughts on recent trends in the music industry, such as streaming services, vinyl revival, or the impact of social media on music discovery."
+            )
+        }
 
     difficulty_prompts = {
         "Easy": "Additionally, the difficulty level is Easy, Use simple and direct language. Keep your responses short and avoid complex details.",
@@ -71,21 +114,30 @@ def create_chat_prompt_template(difficulty, scenario, history):
         "Hard": "Additionally, the difficulty level is Hard, Use complex and detailed language. Include nuanced explanations and advanced vocabulary in your responses."
     }
 
-    scenario_prompt = scenario_prompts.get(scenario)
-    difficulty_prompt = difficulty_prompts.get(difficulty)
-
-    prompt_template = ChatPromptTemplate.from_messages(
-        [
-            ("system", f"{scenario_prompt} {difficulty_prompt}. Please ask the user a question directly without any introductory phrases.\nchat_history: {history}"),
-            ("human", "{{input}}")
-        ]
-    )
+    scenario_prompt = scenario_prompts.get(scenario, "You are a helpful assistant.")
+    difficulty_prompt = difficulty_prompts.get(difficulty, "Use appropriate language.")
+    if first:
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ("system", f"{scenario_prompt} {difficulty_prompt} Please ask the user a question directly without any introductory phrases.\nchat_history:{history}"),
+                ("human", "{{input}}")
+            ]
+        )
+    else:
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ("system", f"Please ask the user a question directly without any introductory phrases.\nchat_history:{history}"),
+                ("human", "{{input}}")
+            ]
+        )
+    print("prompt_template", prompt_template)
     return prompt_template
-def create_quiz_prompt_template(quiz_type, difficulty, history):
+
+def create_quiz_prompt_template(quiz_type, difficulty, history, first):
     quiz_type_prompts = {
         "vocabulary": "You are an expert at creating vocabulary quizzes. Create a quiz where the user needs to identify the correct word based on the context.",
         "grammar": "You are an expert at creating grammar quizzes. Create a quiz where the user needs to identify the correct grammar usage."
-    }   
+    }
 
     difficulty_prompts = {
         "Easy": "Additionally, the difficulty level is Easy, so create the quiz with simple and direct expressions.",
@@ -97,63 +149,72 @@ def create_quiz_prompt_template(quiz_type, difficulty, history):
 
     quiz_prompt = quiz_type_prompts.get(quiz_type)
     difficulty_prompt = difficulty_prompts.get(difficulty)
+    if first:
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{history}"),
+                ("human", "{{input}}")
+            ]
+        )
+    else:
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ("system", f"Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{history}"),
+                ("human", "{{input}}")
+            ]
+        )
 
-    prompt_template = ChatPromptTemplate.from_messages(
-        [
-            ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions.\nchat_history: {history}"),
-            ("human", "{{input}}")
-        ]
-    )
-
+    print("prompt_template", prompt_template)
     return prompt_template
 
-async def stream_chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input):
-    memory = get_memory(user_id, conversation_id)
+# async def stream_chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input):
+#     memory = get_memory(user_id, conversation_id)
     
-    # 대화 히스토리를 가져옴
-    history = memory.load_memory_variables({}).get("history", "")
-    prompt_template = create_chat_prompt_template(difficulty, scenario, history)
-    prompt_text = prompt_template.format(input=user_input)
+#     # 대화 히스토리를 가져옴
+#     history = memory.load_memory_variables({}).get("history", "")
+#     prompt_template = create_chat_prompt_template(difficulty, scenario, history)
+#     prompt_text = prompt_template.format(input=user_input)
     
-    async def stream_response():
-        full_response = ""
-        async for chunk in bedrock_llm.astream(prompt_text):
-            response_content = chunk.content
-            print(response_content, end="", flush=True)
-            yield response_content
-            full_response += response_content  # 응답을 누적
+#     async def stream_response():
+#         full_response = ""
+#         async for chunk in bedrock_llm.astream(prompt_text):
+#             response_content = chunk.content
+#             print(response_content, end="", flush=True)
+#             yield response_content
+#             full_response += response_content  # 응답을 누적
             
-        # 새로운 대화 내용을 메모리에 저장
-        memory.save_context({"human": user_input}, {"ai": full_response})
-        print(memory.load_memory_variables({}))
-    return StreamingResponse(stream_response(), media_type="text/plain")
+#         # 새로운 대화 내용을 메모리에 저장
+#         memory.save_context({"human": user_input}, {"ai": full_response})
+#         print(memory.load_memory_variables({}))
+#     return StreamingResponse(stream_response(), media_type="text/plain")
 
-async def stream_quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input):
+# async def stream_quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input):
+#     memory = get_memory(user_id, conversation_id)
+
+#     # 대화 히스토리를 가져옴
+#     history = memory.load_memory_variables({}).get("history", "")
+#     prompt_template = create_quiz_prompt_template(quiz_type, difficulty, history)
+#     prompt_text = prompt_template.format(input=user_input)
+    
+#     async def stream_response():
+#         full_response = ""
+#         async for chunk in bedrock_llm.astream(prompt_text):
+#             response_content = chunk.content
+#             print(response_content, end="", flush=True)
+#             yield response_content
+#             full_response += response_content  # 응답을 누적
+    
+#         # 새로운 대화 내용을 메모리에 저장
+#         memory.save_context({"human": user_input}, {"ai": full_response})
+#         print(memory.load_memory_variables({}))
+#     return StreamingResponse(stream_response(), media_type="text/plain")
+
+async def chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input, first):
     memory = get_memory(user_id, conversation_id)
-
+    
     # 대화 히스토리를 가져옴
     history = memory.load_memory_variables({}).get("history", "")
-    prompt_template = create_quiz_prompt_template(quiz_type, difficulty, history)
-    prompt_text = prompt_template.format(input=user_input)
-    
-    async def stream_response():
-        full_response = ""
-        async for chunk in bedrock_llm.astream(prompt_text):
-            response_content = chunk.content
-            print(response_content, end="", flush=True)
-            yield response_content
-            full_response += response_content  # 응답을 누적
-    
-        # 새로운 대화 내용을 메모리에 저장
-        memory.save_context({"human": user_input}, {"ai": full_response})
-        print(memory.load_memory_variables({}))
-    return StreamingResponse(stream_response(), media_type="text/plain")
-async def chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input):
-    memory = get_memory(user_id, conversation_id)
-    
-    # 대화 히스토리를 가져옴
-    history = memory.load_memory_variables({}).get("history", "")
-    prompt_template = create_chat_prompt_template(difficulty, scenario, history)
+    prompt_template = create_chat_prompt_template(difficulty, scenario, history, first)
     prompt_text = prompt_template.format(input=user_input)
     print("prompt_text: ", prompt_text)
     response = bedrock_llm.invoke(prompt_text)
@@ -167,12 +228,12 @@ async def chat_get_response_from_claude(user_id, conversation_id, difficulty, sc
         "conversation_id": conversation_id
     })
 
-async def quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input):
+async def quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input, first):
     memory = get_memory(user_id, conversation_id)
 
     # 대화 히스토리를 가져옴
     history = memory.load_memory_variables({}).get("history", "")
-    prompt_template = create_quiz_prompt_template(quiz_type, difficulty, history)
+    prompt_template = create_quiz_prompt_template(quiz_type, difficulty, history, first)
     prompt_text = prompt_template.format(input=user_input)
     print("prompt_text: ", prompt_text)
     response = bedrock_llm.invoke(prompt_text)
@@ -209,27 +270,27 @@ async def save_conversation_to_s3(user_id, conversation_id, user_name):
 
     return s3_key
 
-@app.post("/stream/chat")
-async def stream_chat_endpoint(request: Request):
-    data = await request.json()
-    user_id = data.get('user_id')
-    conversation_id = data.get('conversation_id')
-    user_input = data.get('input', 'Can you ask me a question?')
-    difficulty = data.get('difficulty', 'Normal')
-    scenario = data.get('scenario', 'coffee')
+# @app.post("/stream/chat")
+# async def stream_chat_endpoint(request: Request):
+#     data = await request.json()
+#     user_id = data.get('user_id')
+#     conversation_id = data.get('conversation_id')
+#     user_input = data.get('input', 'Can you ask me a question?')
+#     difficulty = data.get('difficulty', 'Normal')
+#     scenario = data.get('scenario', 'coffee')
 
-    return await stream_chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input)
+#     return await stream_chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input)
 
-@app.post("/stream/quiz")
-async def stream_quiz_endpoint(request: Request):
-    data = await request.json()
-    user_id = data.get('user_id')
-    conversation_id = data.get('conversation_id')
-    quiz_type = data.get('quiz_type', 'vocabulary')
-    difficulty = data.get('difficulty', 'Normal')
-    user_input = data.get('input', 'Please give me a quiz question.')
+# @app.post("/stream/quiz")
+# async def stream_quiz_endpoint(request: Request):
+#     data = await request.json()
+#     user_id = data.get('user_id')
+#     conversation_id = data.get('conversation_id')
+#     quiz_type = data.get('quiz_type', 'vocabulary')
+#     difficulty = data.get('difficulty', 'Normal')
+#     user_input = data.get('input', 'Please give me a quiz question.')
 
-    return await stream_quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input)
+#     return await stream_quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input)
 
 @app.post("/chat")
 async def chat_endpoint(request: Request):
@@ -239,8 +300,8 @@ async def chat_endpoint(request: Request):
     user_input = data.get('input', 'Can you ask me a question?')
     difficulty = data.get('difficulty', 'Normal')
     scenario = data.get('scenario', 'coffee')
-
-    return await chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input)
+    first = data.get('first', 'True')
+    return await chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input, first)
 
 @app.post("/quiz")
 async def quiz_endpoint(request: Request):
@@ -250,15 +311,15 @@ async def quiz_endpoint(request: Request):
     quiz_type = data.get('quiz_type', 'vocabulary')
     difficulty = data.get('difficulty', 'Normal')
     user_input = data.get('input', 'Please give me a quiz question.')
-
-    return await quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input)
+    first = data.get('first', 'True')
+    return await quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input, first)
 
 @app.post("/chat/evaluate")
 async def chat_evaluate_endpoint(request: Request):
     data = await request.json()
     user_id = data.get('user_id')
     conversation_id = data.get('conversation_id')
-    user_name = data.get('user_name')
+    # user_name = data.get('user_name')
     memory = get_memory(user_id, conversation_id)
 
     if not memory.chat_memory.messages:
@@ -294,7 +355,7 @@ async def quiz_evaluate_endpoint(request: Request):
     data = await request.json()
     user_id = data.get('user_id')
     conversation_id = data.get('conversation_id')
-    user_name = data.get('user_name')
+    # user_name = data.get('user_name')
     memory = get_memory(user_id, conversation_id)
 
     if not memory.chat_memory.messages:
@@ -321,7 +382,7 @@ async def quiz_evaluate_endpoint(request: Request):
     print("response_content: ", response_content)
     total_questions = int(response_content.get("total_questions"))
     correct_answers = int(response_content.get("correct_answers"))
-    score = (total_questions/correct_answers) * 100
+    score = (correct_answers/total_questions) * 100
     score = round(score, 1) # 반올림
     score = str(score)
     return JSONResponse(content={
