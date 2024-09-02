@@ -5,14 +5,14 @@ from services.memory_service import MemoryService
 from services.bedrock_service import BedrockService
 from services.prompt_service import PromptService
 from services.s3_service import S3Service
-from utils.config import MODEL_ID, REGION_NAME, S3_BUCKET_NAME
+from utils.config import MODEL_ID, REGION_NAME, S3_BUCKET_NAME, REDIS_URL
 from langchain.chains import ConversationChain
 from langchain.schema import HumanMessage
 # from s3_storage import S3Storage
 
 class APIHandler:
     def __init__(self):
-        self.memory_service = MemoryService()
+        self.memory_service = MemoryService(redis_url=REDIS_URL)
         self.bedrock_service = BedrockService(model_id=MODEL_ID, region_name=REGION_NAME)
         self.prompt_service = PromptService()
         self.s3_storage = S3Service(bucket_name=S3_BUCKET_NAME, region_name=REGION_NAME)

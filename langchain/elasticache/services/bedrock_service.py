@@ -3,7 +3,7 @@ import boto3
 from langchain_aws import ChatBedrock
 
 class BedrockService:
-    def __init__(self, model_id, region_name, role):
+    def __init__(self, model_id, region_name):
         self.bedrock_llm = ChatBedrock(
             model_id=model_id,
             model_kwargs=dict(temperature=0),
