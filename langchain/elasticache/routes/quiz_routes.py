@@ -1,14 +1,14 @@
 # app/routes/quiz_routes.py
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from app.services.bedrock_service import BedrockService
-from app.services.memory_service import MemoryService
-from app.services.prompt_service import PromptService
+from services.bedrock_service import BedrockService
+from services.memory_service import MemoryService
+from services.prompt_service import PromptService
 
 router = APIRouter()
 
 # 필요한 서비스 초기화
-bedrock_service = BedrockService(model_id="your-model-id", region_name="your-region", role="your-role")
+bedrock_service = BedrockService(model_id=MODEL_ID, region_name=REGION_NAME)
 memory_service = MemoryService(redis_url="your-redis-url")
 prompt_service = PromptService()
 
