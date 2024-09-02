@@ -26,7 +26,7 @@ S3_BUCKET_NAME = 'mmmybucckeet'
 s3_client = boto3.client('s3', region_name='ap-northeast-1')
 
 # Redis URL 가져오기
-redis_url = "redis://test.fcr1s2.ng.0001.apne1.cache.amazonaws.com:6379"
+redis_url = ""
 
 # Bedrock 클라이언트 초기화
 def initialize_bedrock_client(model_id, region_name):
