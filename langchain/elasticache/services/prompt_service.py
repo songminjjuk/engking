@@ -1,6 +1,6 @@
 from langchain.prompts import ChatPromptTemplate
 
-class PromptGenerator:
+class PromptService:
     quiz_example_output = """
     Example format:
     <Question Number> <Question>
