@@ -75,15 +75,15 @@ class PromptService:
         if first:
             prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"{scenario_prompt} {difficulty_prompt}. Please ask the user a question directly without any introductory phrases.\nchat_history: {history}"),
-                ("human", "{{input}}")
+                ("system", f"{scenario_prompt} {difficulty_prompt}. Please ask the user a question directly without any introductory phrases.\nchat_history: {{history}}"),
+                ("human", "{input}")
             ]
         )
         else:
             prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"Please ask the user a question directly without any introductory phrases.\nchat_history: {history}"),
-                ("human", "{{input}}")
+                ("system", f"Please ask the user a question directly without any introductory phrases.\nchat_history: {{history}}"),
+                ("human", "{input}")
             ]
         )
         return prompt_template
@@ -105,15 +105,15 @@ class PromptService:
         if first:
             prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {self.quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions.\nchat_history: {history}"),
-                ("human", "{{input}}")
+                ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {self.quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions.\nchat_history: {{history}}"),
+                ("human", "{input}")
             ]
         )
         else:
             prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"Generate only one quiz question.\nchat_history: {history}"),
-                ("human", "{{input}}")
+                ("system", f"Generate only one quiz question.\nchat_history: {{history}}"),
+                ("human", "{input}")
             ]
         )
         return prompt_template
