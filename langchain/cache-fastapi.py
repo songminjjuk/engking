@@ -12,11 +12,6 @@ import uvicorn
 from langchain.schema import HumanMessage, AIMessage
 import redis
 app = FastAPI()
-
-# S3 버킷 설정
-S3_BUCKET_NAME = 'mmmybucckeet'
-s3_client = boto3.client('s3', region_name='ap-northeast-1')
-
 quiz_example_output = """
     Example format:
     <Question Number> <Question>
@@ -25,8 +20,12 @@ quiz_example_output = """
     C) <Option 3>
     D) <Option 4>
     """
+# S3 버킷 설정
+S3_BUCKET_NAME = 'mmmybucckeet'
+s3_client = boto3.client('s3', region_name='ap-northeast-1')
+
 # Redis URL 가져오기
-redis_url = "redis://rttity.fcr1s2.ng.0001.apne1.cache.amazonaws.com:6379"
+redis_url = "redis://test.fcr1s2.ng.0001.apne1.cache.amazonaws.com:6379"
 
 # Bedrock 클라이언트 초기화
 def initialize_bedrock_client(model_id, region_name):
@@ -169,20 +168,21 @@ def create_quiz_prompt_template(quiz_type, difficulty, first):
     if first:
         prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions.\nchat_history:{{history}}"),
+                ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{{history}}"),
                 ("human", "{input}")
             ]
         )
     else:
         prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions.\nchat_history:{{history}}"),
+                ("system", f"Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{{history}}"),
                 ("human", "{input}")
             ]
         )
-        
+
     print("prompt_template", prompt_template)
     return prompt_template
+
 # 대화 API 엔드포인트
 @app.post("/chat")
 async def chat_endpoint(request: Request):
@@ -192,9 +192,10 @@ async def chat_endpoint(request: Request):
     user_input = data.get('input', 'Can you ask me a question?')
     difficulty = data.get('difficulty', 'Normal')
     scenario = data.get('scenario', 'coffee')
+    first = data.get('first', 'True')
     print("user_id: ", user_id)
     memory = get_memory(user_id, conversation_id)
-    prompt_template = create_chat_prompt_template(scenario, difficulty)
+    prompt_template = create_chat_prompt_template(scenario, difficulty, first)
     conversation = ConversationChain(llm=bedrock_llm, memory=memory, prompt=prompt_template, verbose=True)
     print("conversation: ", conversation)
     response_content = conversation.predict(input=user_input)
@@ -214,9 +215,9 @@ async def quiz_endpoint(request: Request):
     quiz_type = data.get('quiz_type', 'vocabulary')
     difficulty = data.get('difficulty', 'Normal')
     user_input = data.get('input', 'Please give me a quiz question.')
-
+    first = data.get('first', 'True')
     memory = get_memory(user_id, conversation_id)
-    prompt_template = create_quiz_prompt_template(quiz_type, difficulty)
+    prompt_template = create_quiz_prompt_template(quiz_type, difficulty, first)
     conversation = ConversationChain(llm=bedrock_llm, memory=memory, prompt=prompt_template, verbose=True)
     print("conversation: ", conversation)
     response_content = conversation.predict(input=user_input)
@@ -243,19 +244,34 @@ async def chat_evaluate_endpoint(request: Request):
         f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
         for message in memory.chat_memory.messages
     )
+
     print("conversation_text: ", conversation_text)
     chat_evaluation_prompt = f"""
-    Here is the conversation:\n{conversation_text}\n
-    Please rate the user's language skills on a scale of 1 to 100 and provide feedback on how they can improve.
-    Respond in the following JSON format:
+    You are an expert in evaluating language skills based on conversations. Below is a conversation between a user and an AI.
+    Please evaluate the user's language skills on a scale of 1 to 100 and provide detailed feedback on how they can improve.
+    Ensure your response is strictly in the following JSON format without any additional comments or text:
+
     {{
         "score": "<numeric_score>",
         "feedback": "<feedback>"
     }}
+
+    The response should be a valid JSON string only.
+    Conversation:
+    {conversation_text}
     """
+
     response = bedrock_llm.invoke(chat_evaluation_prompt)
+
+    # 응답이 유효한 JSON 형식인지 확인
+    try:
+        response_content = json.loads(response.content)
+    except json.JSONDecodeError as e:
+        print(f"JSONDecodeError: {str(e)} - Response content: {response.content}")
+        return JSONResponse(content={"error": "Invalid response from the LLM service"}, status_code=500)
+
     delete_memory(user_id, conversation_id)
-    response_content=json.loads(response.content)
+
     return JSONResponse(content={
         "user_id": user_id,
         "conversation_id": conversation_id,
@@ -280,16 +296,24 @@ async def quiz_evaluate_endpoint(request: Request):
         f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
         for message in memory.chat_memory.messages
     )
+
     print("conversation_text: ", conversation_text)
-    quiz_evaluation_prompt=f"""
-    Here is the quiz session:\n{conversation_text}\n
-    Please fill in the "correct_answers" field with the number of correct answers the user provided, and the "total_questions" field with the total number of questions in the quiz. Additionally, provide feedback in the "feedback" field based on the user's performance.
-    Respond in the following JSON format:
+    quiz_evaluation_prompt = f"""
+    You are an expert at evaluating quiz sessions. Below is a conversation that includes a quiz session.
+    Please evaluate the session by filling in the number of correct answers, total questions, and provide feedback.
+    Make sure to return the response strictly in a valid JSON format.
+
+    Conversation:
+    {conversation_text}
+
+    Please respond in the following JSON format:
     {{
         "correct_answers": "<number_of_correct_answers>",
         "total_questions": "<total_number_of_questions>",
         "feedback": "<your_feedback>"
     }}
+
+    Remember, your response should be a valid JSON string, and do not include any extra information or comments outside the JSON.
     """
     response = bedrock_llm.invoke(quiz_evaluation_prompt)
     delete_memory(user_id, conversation_id)
@@ -340,4 +364,3 @@ async def save_conversation_to_s3(user_id, conversation_id, user_name, memory):
 
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=5000)
-

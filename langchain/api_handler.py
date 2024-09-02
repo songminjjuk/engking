@@ -4,7 +4,7 @@ import json
 from memory_manager import MemoryManager
 from bedrock_client import BedrockClient
 from prompt_generator import PromptGenerator
-from langchain.schema import HumanMessage
+from langchain.schema import HumanMessage, AIMessage
 # from s3_storage import S3Storage
 
 class APIHandler:
@@ -114,15 +114,19 @@ class APIHandler:
         data = await request.json()
         user_id = data.get('user_id')
         conversation_id = data.get('conversation_id')
-        user_name = data.get('user_name')
+        # user_name = data.get('user_name')
         memory = self.memory_manager.get_memory(user_id, conversation_id)
 
         if not memory.chat_memory.messages:
             return JSONResponse(content={"error": "No conversation history found"}, status_code=400)
         
+        # 마지막 메시지가 AI의 메시지일 경우 제거
+        if messages and isinstance(messages[-1], AIMessage):
+            messages = messages[:-1]  # 마지막 메시지 제거
+        messages = memory.chat_memory.messages
         conversation_text = "\n".join(
             f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
-            for message in memory.chat_memory.messages
+            for message in messages
         )
         
         chat_evaluation_prompt = f"""
@@ -137,7 +141,7 @@ class APIHandler:
         response = self.bedrock_client.invoke(chat_evaluation_prompt)
         self.memory_manager.delete_memory(user_id, conversation_id)
         response_content = json.loads(response.content)
-        print(response_content)
+        print("response_content: ", response_content)
         
         return JSONResponse(content={
             "user_id": user_id,
@@ -150,15 +154,19 @@ class APIHandler:
         data = await request.json()
         user_id = data.get('user_id')
         conversation_id = data.get('conversation_id')
-        user_name = data.get('user_name')
+        # user_name = data.get('user_name')
         memory = self.memory_manager.get_memory(user_id, conversation_id)
 
         if not memory.chat_memory.messages:
             return JSONResponse(content={"error": "No quiz history found"}, status_code=400)
-        
+        messages = memory.chat_memory.messages
+        # 마지막 메시지가 AI의 메시지일 경우 제거
+        if messages and isinstance(messages[-1], AIMessage):
+            messages = messages[:-1]  # 마지막 메시지 제거
+
         conversation_text = "\n".join(
             f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
-            for message in memory.chat_memory.messages
+            for message in messages
         )
         quiz_evaluation_prompt = f"""
         Here is the quiz session:\n{conversation_text}\n
@@ -173,7 +181,7 @@ class APIHandler:
         response = self.bedrock_client.invoke(quiz_evaluation_prompt)
         self.memory_manager.delete_memory(user_id, conversation_id)
         response_content = json.loads(response.content)
-        print(response_content)
+        pprint("response_content: ", response_content)
         total_questions = int(response_content.get("total_questions"))
         correct_answers = int(response_content.get("correct_answers"))
         score = (correct_answers / total_questions) * 100
