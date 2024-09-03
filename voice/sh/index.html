@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Upload and Transcription</title>
+</head>
+<body>
+    <h1>오디오 파일 업로드 및 전사</h1>
+    <input type="file" id="audioFile" accept="audio/*">
+    <button id="uploadButton">업로드 및 전사</button>
+    <p id="result"></p>
+    <audio id="audioPlayer" controls preload="auto" style="display:none;">
+        <source id="audioSource" src="" type="audio/mpeg">
+        이 브라우저는 오디오 태그를 지원하지 않습니다.
+    </audio>    
+
+    <script>
+        document.getElementById('uploadButton').onclick = async () => {
+            const fileInput = document.getElementById('audioFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('오디오 파일을 선택해 주세요.');
+                return;
+            }
+            
+            const filename = file.name;
+            
+            // 0단계: 파일을 서버에 업로드
+            const formData = new FormData();
+            formData.append('file', file);
+            
+
+            const uploadResponse = await fetch('http://127.0.0.1:8000/api/upload/', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                const errorDetail = await uploadResponse.json();
+                document.getElementById('result').innerText = `오류: ${errorDetail.detail}`;
+                return;
+            }
+
+            // 1단계: 파일명과 함께 URL로 presigned URL 요청
+            const presignedResponse = await fetch('http://127.0.0.1:8000/api/create-put-url/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename }) // filename을 JSON으로 전달
+            });
+
+            if (!presignedResponse.ok) {
+                const errorDetail = await presignedResponse.json();
+                document.getElementById('result').innerText = `오류: ${errorDetail.detail}`;
+                return;
+            }
+
+            const { presigned_url } = await presignedResponse.json();
+            console.log('presigned_url:', presigned_url);
+
+            // 2단계: 파일을 S3에 업로드
+            const s3UploadResponse = await fetch(presigned_url, {
+                method: 'PUT',
+                body: file // presigned URL에 파일을 PUT 요청으로 업로드
+            });
+
+            if (!s3UploadResponse.ok) {
+                document.getElementById('result').innerText = `파일 업로드 오류: ${s3UploadResponse.statusText}`;
+                return;
+            }
+
+            // 3단계: 전사 요청
+            const transcribeData = {
+                memberId: 'memberId1',
+                chatRoomId: 'chatRoomId1',
+                chatId: 'chatId1',
+                filename: filename, // 업로드한 파일의 파일명
+            };
+
+            const transcribeResponse = await fetch('http://127.0.0.1:8000/api/transcribe/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(transcribeData)
+            });
+
+            if (!transcribeResponse.ok) {
+                const errorDetail = await transcribeResponse.json();
+                document.getElementById('result').innerText = `오류: ${errorDetail.detail}`;
+                return;
+            }
+
+            const { success, responseText, audioUrl } = await transcribeResponse.json();
+            console.log("responseText:", responseText);
+            console.log("audioUrl:", audioUrl);
+
+            document.getElementById('result').innerText = `변환된 오디오 URL: ${audioUrl}`;
+
+            // S3 presigned URL을 사용하여 오디오 재생
+            const audioPlayer = document.getElementById('audioPlayer');
+            const audioSource = document.getElementById('audioSource');
+            audioSource.src = audioUrl; // audio_url을 S3 presigned URL로 설정
+            audioPlayer.load(); // 새로운 소스를 로드
+            audioPlayer.style.display = 'block'; // 오디오 플레이어 보이기
+            audioPlayer.play(); // 오디오 재생
+        };
+    </script>
+</body>
+</html>
