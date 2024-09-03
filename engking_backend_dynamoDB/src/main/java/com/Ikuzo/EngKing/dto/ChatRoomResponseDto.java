@@ -19,8 +19,9 @@ public class ChatRoomResponseDto {
     private String memberId;    // DynamoDB의 정렬 키
     private String difficulty;
     private String topic;
+    private String quiz_type;
     private LocalDateTime createdTime;
-
-    private boolean success; // db 저장 됬는지
+    
+    private boolean queryResult; // CRUD 결과
 
 }

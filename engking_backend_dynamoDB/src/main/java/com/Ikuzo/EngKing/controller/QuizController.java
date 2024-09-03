@@ -2,7 +2,6 @@ package com.Ikuzo.EngKing.controller;
 
 import com.Ikuzo.EngKing.dto.QuestionRequestDto;
 import com.Ikuzo.EngKing.dto.QuestionResponseDto;
-import com.Ikuzo.EngKing.service.QuestionService;
 import com.Ikuzo.EngKing.service.QuizService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,34 +17,33 @@ import java.time.LocalDateTime;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/chat")
-public class QuestionController {
+@RequestMapping("/quiz")
+public class QuizController {
 
-    private final QuestionService questionService;
     private final QuizService quizService;
 
-    @PostMapping("/firstquestion")
-    public ResponseEntity<QuestionResponseDto> createFirstQuestion(@RequestBody QuestionRequestDto questionRequestDto) {
+    @PostMapping("/createquiz")
+    public ResponseEntity<QuestionResponseDto> createFirstQuiz(@RequestBody QuestionRequestDto questionRequestDto) {
         String memberId = questionRequestDto.getMemberId();
-        String topic = questionRequestDto.getTopic();
+        String quiz_type = questionRequestDto.getQuiz_type();
         String difficulty = questionRequestDto.getDifficulty();
 
-        QuestionResponseDto questionResponseDto = questionService.createChatRoom(memberId, topic, difficulty);
+        QuestionResponseDto questionResponseDto = quizService.createQuizRoom(memberId, quiz_type, difficulty);
 
         // 채팅방 생성 성공시, 첫 질문 생성 시도
         if (questionResponseDto.isSuccess()) {
-            String langChainMessage = questionService.createQuestion(questionResponseDto.getMemberId(), questionResponseDto.getChatRoomId(), "Can you ask me a question?", difficulty, topic, true);
+            String langChainMessage = quizService.createQuiz(questionResponseDto.getMemberId(), questionResponseDto.getChatRoomId(), "Can you ask me a question?", difficulty, quiz_type, true);
 
             // 메시지 ID와 시간을 생성하여 DynamoDB에 저장
             String messageId = "1";  // 첫 메시지이므로 ID는 1
             String messageTime = LocalDateTime.now().withNano(0).toString();
             String audioUrl = null;
 
-            boolean saveSuccess = questionService.saveChatMessageToDynamoDB(
+            boolean saveSuccess = quizService.saveChatMessageToDynamoDB(
                     questionResponseDto.getChatRoomId(),
                     messageTime,
                     messageId,
-                    "AI",
+                    memberId,  // 발신자 == 사용자
                     langChainMessage,
                     audioUrl // 오디오 파일 URL이 없는 경우 null 처리
             );
@@ -59,30 +57,30 @@ public class QuestionController {
             questionResponseDto.setMessageId(messageId);
             return ResponseEntity.status(HttpStatus.OK).body(questionResponseDto);
         }
-        // 채팅방 생성 실패시
+        // 퀴즈방 생성 실패시
         else {
             QuestionResponseDto badQuestionResponseDto = new QuestionResponseDto();
             badQuestionResponseDto.setMessageId("1");
-            badQuestionResponseDto.setTopic(topic);
+            badQuestionResponseDto.setQuiz_type(quiz_type);
             badQuestionResponseDto.setDifficulty(difficulty);
             badQuestionResponseDto.setSuccess(false);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(badQuestionResponseDto);
         }
     }
 
-    @PostMapping("/nextquestion")
-    public ResponseEntity<QuestionResponseDto> createNextQuestion(@RequestBody QuestionRequestDto questionRequestDto) {
+    @PostMapping("/answer")
+    public ResponseEntity<QuestionResponseDto> createNextQuiz(@RequestBody QuestionRequestDto questionRequestDto) {
         String memberId = questionRequestDto.getMemberId();
         String chatRoomId = questionRequestDto.getChatRoomId();
         String messageId = questionRequestDto.getMessageId();
         String messageText = questionRequestDto.getMessageText();
-        String topic = questionRequestDto.getTopic();
+        String quiz_type = questionRequestDto.getQuiz_type();
         String difficulty = questionRequestDto.getDifficulty();
 
         String AnswerMessageTime = LocalDateTime.now().withNano(0).toString();
         String AnswerAudioUrl = null;
 
-        boolean answerSaveSuccess = questionService.saveChatMessageToDynamoDB(
+        boolean answerSaveSuccess = quizService.saveChatMessageToDynamoDB(
                 chatRoomId,
                 AnswerMessageTime,
                 messageId,
@@ -96,7 +94,7 @@ public class QuestionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
 
-        String nextQuestion = questionService.createQuestion(memberId, chatRoomId, messageText, difficulty, topic, false);
+        String nextQuestion = quizService.createQuiz(memberId, chatRoomId, messageText, difficulty, quiz_type, false);
 
         int number = Integer.parseInt(messageId);
         number += 1;
@@ -106,11 +104,11 @@ public class QuestionController {
 
 
         // DynamoDB에 다음 질문 저장
-        boolean questionSaveSuccess = questionService.saveChatMessageToDynamoDB(
+        boolean questionSaveSuccess = quizService.saveChatMessageToDynamoDB(
                 chatRoomId,
                 QuestionMessageTime,
                 nextMessageId,
-                "AI",
+                memberId,
                 nextQuestion,
                 questionAudioUrl // 오디오 파일 URL이 없는 경우 null 처리
         );
@@ -130,23 +128,20 @@ public class QuestionController {
         return ResponseEntity.status(HttpStatus.OK).body(questionResponseDto);
     }
 
-    @PostMapping("/endquestion")
+    @PostMapping("/endquiz")
     public ResponseEntity<QuestionResponseDto> endQuestion(@RequestBody QuestionRequestDto questionRequestDto) {
         String memberId = questionRequestDto.getMemberId();
         String chatRoomId = questionRequestDto.getChatRoomId();
         String messageId = questionRequestDto.getMessageId();
         Boolean endRequest = questionRequestDto.isEndRequest();
-        String AnswerAudioUrl = null;
 
         if (endRequest) {
-            QuestionResponseDto questionResponseDto = questionService.endQuestion(memberId, chatRoomId);
-            String messageTime = LocalDateTime.now().withNano(0).toString();
+            QuestionResponseDto questionResponseDto = quizService.endQuiz(memberId, chatRoomId);
 
             if (questionResponseDto != null && questionResponseDto.getScore() != null && questionResponseDto.getFeedback() != null) {
-                boolean updateSuccess = questionService.updateChatRoomScoreAndFeedback(chatRoomId, memberId, questionResponseDto.getScore(), questionResponseDto.getFeedback());
-                boolean updateMessageSuccess = quizService.saveScoreAndFeedbackToDynamoDB(chatRoomId, messageTime, messageId, "AI", AnswerAudioUrl, questionResponseDto.getScore(), questionResponseDto.getFeedback());
+                boolean updateSuccess = quizService.updateChatRoomScoreAndFeedback(chatRoomId, memberId, questionResponseDto.getScore(), questionResponseDto.getFeedback());
 
-                if (!updateSuccess || !updateMessageSuccess) {
+                if (!updateSuccess) {
                     log.error("Failed to update score and feedback in DynamoDB.");
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
                 }

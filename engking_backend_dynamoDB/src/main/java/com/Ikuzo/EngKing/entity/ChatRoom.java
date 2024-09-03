@@ -9,10 +9,13 @@ import java.time.format.DateTimeFormatter;
 public class ChatRoom {
 
     private String chatRoomId;  // DynamoDB의 파티션 키
-    private String memberId;
+    private String memberId;  // DynamoDB의 정렬 키
     private String difficulty;
     private String topic;
+    private String quiz_type;
     private LocalDateTime createdTime;
+    private String score;
+    private String feedback;
 
     // LocalDateTime과 String 간 변환을 위한 헬퍼 메서드
     public static class LocalDateTimeConverter {
