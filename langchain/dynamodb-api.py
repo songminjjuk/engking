@@ -10,9 +10,13 @@ from langchain.prompts import ChatPromptTemplate
 from datetime import datetime
 import uvicorn
 from langchain.schema import HumanMessage, AIMessage
-import redis
+import requests
 
 app = FastAPI()
+
+# 기존의 메모리 저장소
+memory_store = {}
+
 quiz_example_output = """
     Example format:
     <Question Number> <Question>
@@ -21,12 +25,13 @@ quiz_example_output = """
     C) <Option 3>
     D) <Option 4>
     """
+
 # S3 버킷 설정
 S3_BUCKET_NAME = 'mmmybucckeet'
 s3_client = boto3.client('s3', region_name='ap-northeast-1')
 
-# Redis URL 가져오기
-redis_url = "redis://test.fcr1s2.ng.0001.apne1.cache.amazonaws.com:6379"
+# Redis URL, DB URL 가져오기
+db_url = ""
 
 # Bedrock 클라이언트 초기화
 def initialize_bedrock_client(model_id, region_name):
@@ -45,31 +50,77 @@ bedrock_llm = initialize_bedrock_client(
 
 # 메모리 관리 함수
 def get_memory(user_id, conversation_id):
-    print("Connecting to Redis:", redis_url)
-    # 혹은 단순한 연결 테스트
-    try:
-        r = redis.StrictRedis.from_url(redis_url)
-        r.ping()
-        print("Redis connection successful")
-    except Exception as e:
-        print("Failed to connect to Redis:", str(e))
+    # print("Connecting to Redis:", redis_url)
+    # # 혹은 단순한 연결 테스트
+    # try:
+    #     r = redis.StrictRedis.from_url(redis_url)
+    #     r.ping()
+    #     print("Redis connection successful")
+    # except Exception as e:
+    #     print("Failed to connect to Redis:", str(e))
 
-    memory_key = f"{user_id}_{conversation_id}"
-    print("memory_key: ", memory_key)
-    print("Creating RedisChatMessageHistory...")
-    chat_history = RedisChatMessageHistory(session_id=memory_key, url=redis_url, key_prefix="chat_history:")
-    print("RedisChatMessageHistory created successfully")
-    print("Creating ConversationBufferMemory...")
-    memory = ConversationBufferMemory(chat_memory=chat_history, return_messages=True, memory_key="history")
-    print("ConversationBufferMemory created successfully")
-    print("memory: ", memory)
-    return memory
+    # memory_key = f"{user_id}_{conversation_id}"
+    # print("memory_key: ", memory_key)
+    # print("Creating RedisChatMessageHistory...")
+    # chat_history = RedisChatMessageHistory(session_id=memory_key, url=redis_url, key_prefix="chat_history:")
+    # print("RedisChatMessageHistory created successfully")
+    # print("Creating ConversationBufferMemory...")
+    # memory = ConversationBufferMemory(chat_memory=chat_history, return_messages=True, memory_key="history")
+    # print("ConversationBufferMemory created successfully")
+    # print("memory: ", memory)
+    # return memory
+    api_endpoint = f"{db_url}/chatmessage/allmessages"
+    request_data = {
+        "memberId": user_id,            
+        "chatRoomId": conversation_id  
+    }
+    # API 요청 보내기
+    response = requests.post(api_endpoint, json=request_data)
+
+    if response.status_code == 200:
+        # 성공적으로 데이터를 받아온 경우
+        response_data = response.json()
+        # print("response_data: ", response_data)
+        memory_key = f"{user_id}_{conversation_id}"
+        # 메모리 객체가 없으면 생성
+        if memory_key not in memory_store:
+            memory_store[memory_key] = ConversationBufferMemory(return_messages=True, memory_key="history")
+        #, input_key="human", output_key="ai")
+        memory = memory_store[memory_key]
+
+
+        # 응답 데이터를 memory에 저장
+        for message in response_data:
+            sender_id = message.get("senderId")
+            message_text = message.get("messageText", "")
+
+            # if sender_id == "AI":
+            #     memory.save_context({}, {"output": message_text})
+            # else:
+            #     memory.save_context({"input": message_text}, {})
+            if sender_id == "AI" and message_text:
+                # AI가 보낸 메시지로 AIMessage로 저장
+                memory.chat_memory.add_ai_message(AIMessage(content=message_text))
+            elif message_text:  # 사용자 메시지를 HumanMessage로 저장
+                memory.chat_memory.add_user_message(HumanMessage(content=message_text))
+        print("get_memory: ", memory)
+        return memory
+    else:
+        # 요청이 실패한 경우 에러 처리
+        print(f"Failed to retrieve messages. Status code: {response.status_code}")
+        print("Error:", response.text)
+        return None
 
 # 메모리 삭제 함수
+# def delete_memory(user_id, conversation_id):
+#     memory_key = f"{user_id}_{conversation_id}"
+#     chat_history = RedisChatMessageHistory(session_id=memory_key, url=redis_url, key_prefix="chat_history:")
+#     chat_history.clear()
+
 def delete_memory(user_id, conversation_id):
     memory_key = f"{user_id}_{conversation_id}"
-    chat_history = RedisChatMessageHistory(session_id=memory_key, url=redis_url, key_prefix="chat_history:")
-    chat_history.clear()
+    if memory_key in memory_store:
+        del memory_store[memory_key]
 
 # Chat Prompt 템플릿 생성 함수
 def create_chat_prompt_template(scenario, difficulty, first):
@@ -134,20 +185,18 @@ def create_chat_prompt_template(scenario, difficulty, first):
     scenario_prompt = scenario_prompts.get(scenario, "You are a helpful assistant.")
     difficulty_prompt = difficulty_prompts.get(difficulty, "Use appropriate language.")
     if first:
-        prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("system", f"{scenario_prompt} {difficulty_prompt} Please ask the user a question directly without any introductory phrases.\nchat_history:{{history}}"),
-                ("human", "{input}")
-            ]
-        )
+        system_prompt = f"{scenario_prompt} {difficulty_prompt} Please ask the user a question directly without any introductory phrases.\nchat_history:{{history}}"
     else:
-        prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("system", f"Please ask the user a question directly without any introductory phrases.\nchat_history:{{history}}"),
-                ("human", "{input}")
-            ]
-        )
-    print("prompt_template", prompt_template)
+        system_prompt = f"Please remember the initial instructions and continue to generate responses accordingly. Ask the user a question directly without any introductory phrases.\nchat_history:{{history}}"
+        
+
+    prompt_template = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_prompt),
+            ("human", "{input}")
+        ]
+    )
+    # print("prompt_template", prompt_template)
     return prompt_template
 
 def create_quiz_prompt_template(quiz_type, difficulty, first):
@@ -157,32 +206,41 @@ def create_quiz_prompt_template(quiz_type, difficulty, first):
     }
 
     difficulty_prompts = {
-        "Easy": "Additionally, the difficulty level is Easy, so create the quiz with simple and direct expressions.",
-        "Normal": "Additionally, the difficulty level is Normal, so create the quiz with moderate expressions that include some details.",
-        "Hard": "Additionally, the difficulty level is Hard, so create the quiz with complex and detailed expressions."
+        "Easy": "Additionally, the difficulty level is Easy, so create the quiz with simple and clear expressions similar to those found in the easier sections of TOEIC exams. "
+                "Use basic vocabulary and straightforward sentence structures, ensuring the question is accessible to beginners.",
+        
+        "Normal": "Additionally, the difficulty level is Normal, so create the quiz with clear and concise expressions similar to those found in TOEIC exams. "
+                "Ensure that the language and structure are practical and commonly used in everyday situations, focusing on moderate difficulty.",
+
+        "Hard": "Additionally, the difficulty level is Hard, so create the quiz with expressions similar to the more challenging sections of TOEIC exams. "
+                "Use more complex sentence structures and a wider range of vocabulary, but still keep it relevant to TOEIC standards."
     }
 
-    # 퀴즈 출력 예시를 프롬프트에 포함
+    quiz_prompt = quiz_type_prompts.get(quiz_type, "You are a helpful assistant creating quizzes.")
+    difficulty_prompt = difficulty_prompts.get(difficulty, "Use appropriate language.")
 
-    quiz_prompt = quiz_type_prompts.get(quiz_type)
-    difficulty_prompt = difficulty_prompts.get(difficulty)
+    # 첫 번째 요청일 때는 상세한 지침을 포함하여 프롬프트 생성
     if first:
-        prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{{history}}"),
-                ("human", "{input}")
-            ]
-        )
+        system_prompt = f"{quiz_prompt} {difficulty_prompt} Please generate only one quiz question. Use the following format: {quiz_example_output}. " \
+                        "Do not provide explanations or feedback. Focus solely on generating the quiz question in the specified format without any introductory text. " \
+                        f"\nchat_history:{{history}}"
     else:
-        prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("system", f"Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{{history}}"),
-                ("human", "{input}")
-            ]
-        )
+        # 이후 요청일 때는 간단하게 지침을 상기시키는 메시지를 포함
+        system_prompt = f"Please remember the initial instructions: generate only one quiz question in the specified format. " \
+                        "Do not provide any feedback or explanations. Focus solely on generating the quiz question. " \
+                        f"Remember that Use the following format: {quiz_example_output}" \
+                        f"\nchat_history:{{history}}"
 
-    print("prompt_template", prompt_template)
+    # 프롬프트 템플릿 구성
+    prompt_template = ChatPromptTemplate.from_messages(
+        [
+            ("system", system_prompt),
+            ("human", "{input}")
+        ]
+    )
+
     return prompt_template
+
 
 # 대화 API 엔드포인트
 @app.post("/chat")
@@ -193,14 +251,24 @@ async def chat_endpoint(request: Request):
     user_input = data.get('input', 'Can you ask me a question?')
     difficulty = data.get('difficulty', 'Normal')
     scenario = data.get('scenario', 'coffee')
-    first = data.get('first', 'True')
+    first = data.get('first', False)
     print("user_id: ", user_id)
-    memory = get_memory(user_id, conversation_id)
+    memory = get_memory(user_id, conversation_id) # db에서 갖고와서 history에 저장 즉, 대화 이력 가져오기
+    # print("memory: ", memory.load_memory_variables({}).get("history", ""))
     prompt_template = create_chat_prompt_template(scenario, difficulty, first)
     conversation = ConversationChain(llm=bedrock_llm, memory=memory, prompt=prompt_template, verbose=True)
     print("conversation: ", conversation)
     response_content = conversation.predict(input=user_input)
-    print(response_content)
+    
+    # # memory에 사용자 입력과 AI 응답 추가
+    # print("zz memory start~")
+    # memory.chat_memory.add_user_message(HumanMessage(content=user_input))
+    # print("Added user message to memory.")
+    # memory.chat_memory.add_ai_message(AIMessage(content=response_content))
+    print("memory: ", memory.load_memory_variables({}).get("history", ""))
+    # print("Added AI message to memory.")
+    print("response: ", response_content)
+    delete_memory(user_id, conversation_id)
     return JSONResponse(content={
         "content": response_content,
         "user_id": user_id,
@@ -216,13 +284,22 @@ async def quiz_endpoint(request: Request):
     quiz_type = data.get('quiz_type', 'vocabulary')
     difficulty = data.get('difficulty', 'Normal')
     user_input = data.get('input', 'Please give me a quiz question.')
-    first = data.get('first', 'True')
-    memory = get_memory(user_id, conversation_id)
+    first = data.get('first', False)
+    memory = get_memory(user_id, conversation_id) # db에서 갖고와서 history에 저장 즉, 대화 이력 가져오기
+    print("memory: ", memory.load_memory_variables({}).get("history", ""))
     prompt_template = create_quiz_prompt_template(quiz_type, difficulty, first)
     conversation = ConversationChain(llm=bedrock_llm, memory=memory, prompt=prompt_template, verbose=True)
     print("conversation: ", conversation)
     response_content = conversation.predict(input=user_input)
-    print(response_content)
+
+    # # memory에 사용자 입력과 AI 응답 추가
+    # print("zz memory start~")
+    # memory.chat_memory.add_user_message(HumanMessage(content=user_input))
+    # print("Added user message to memory.")
+    # memory.chat_memory.add_ai_message(AIMessage(content=response_content))
+    # print("Added AI message to memory.")
+    # print(response_content)
+    delete_memory(user_id, conversation_id)
     return JSONResponse(content={
         "content": response_content,
         "user_id": user_id,
@@ -240,12 +317,10 @@ async def chat_evaluate_endpoint(request: Request):
     if not memory.chat_memory.messages:
         return JSONResponse(content={"error": "No conversation history found"}, status_code=400)
     messages = memory.chat_memory.messages
-    if messages and isinstance(messages[-1], AIMessage):
-        messages = messages[:-1]  # 마지막 메시지 제거
+    # if messages and isinstance(messages[-1], AIMessage):
+    #     messages = messages[:-1]  # 마지막 메시지 제거
     conversation_text = "\n".join(
         f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
-
-
         #for message in memory.chat_memory.messages
         for message in messages
     )
@@ -299,9 +374,8 @@ async def quiz_evaluate_endpoint(request: Request):
         return JSONResponse(content={"error": "No quiz history found"}, status_code=400)
     messages = memory.chat_memory.messages
 
-    if messages and isinstance(messages[-1], AIMessage):
-        messages = messages[:-1]
-
+    # if messages and isinstance(messages[-1], AIMessage):
+    #     messages = messages[:-1]
     conversation_text = "\n".join(
         f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
         #for message in memory.chat_memory.messages
@@ -341,37 +415,37 @@ async def quiz_evaluate_endpoint(request: Request):
     })
 
 # 대화 저장 API 엔드포인트
-@app.post("/save")
-async def save_endpoint(request: Request):
-    data = await request.json()
-    user_id = data.get('user_id')
-    conversation_id = data.get('conversation_id')
-    user_name = data.get('user_name')
+# @app.post("/save")
+# async def save_endpoint(request: Request):
+#     data = await request.json()
+#     user_id = data.get('user_id')
+#     conversation_id = data.get('conversation_id')
+#     user_name = data.get('user_name')
 
-    memory = get_memory(user_id, conversation_id)
-    s3_key = await save_conversation_to_s3(user_id, conversation_id, user_name, memory)
+#     memory = get_memory(user_id, conversation_id)
+#     s3_key = await save_conversation_to_s3(user_id, conversation_id, user_name, memory)
 
-    return JSONResponse(content={"message": "Conversation saved", "s3_key": s3_key})
+#     return JSONResponse(content={"message": "Conversation saved", "s3_key": s3_key})
 
-async def save_conversation_to_s3(user_id, conversation_id, user_name, memory):
-    # 대화 내용을 텍스트 형식으로 변환
-    conversation_text = "\n".join(
-        f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
-        for message in memory.chat_memory.messages
-    )
+# async def save_conversation_to_s3(user_id, conversation_id, user_name, memory):
+#     # 대화 내용을 텍스트 형식으로 변환
+#     conversation_text = "\n".join(
+#         f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
+#         for message in memory.chat_memory.messages
+#     )
 
-    # 파일 이름 생성
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    s3_key = f"{user_name}/conversation_{conversation_id}_{timestamp}.txt"
+#     # 파일 이름 생성
+#     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+#     s3_key = f"{user_name}/conversation_{conversation_id}_{timestamp}.txt"
 
-    # S3에 파일 업로드
-    s3_client.put_object(
-        Bucket=S3_BUCKET_NAME,
-        Key=s3_key,
-        Body=conversation_text.encode('utf-8')
-    )
+#     # S3에 파일 업로드
+#     s3_client.put_object(
+#         Bucket=S3_BUCKET_NAME,
+#         Key=s3_key,
+#         Body=conversation_text.encode('utf-8')
+#     )
 
-    return s3_key
+#     return s3_key
 
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=5000)
