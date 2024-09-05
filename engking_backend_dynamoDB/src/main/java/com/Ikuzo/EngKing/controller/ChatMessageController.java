@@ -21,12 +21,6 @@ public class ChatMessageController {
     private final ChatMessageService chatMessageService;
     private final S3Service s3Service;
 
-
-//    @PostMapping("/create")
-//    public ChatMessages addMessageToChatRoom(@PathVariable String chatRoomId, @RequestBody ChatMessages messages) {
-//        return chatMessageService.addMessageToChatRoom(chatRoomId, messages);
-//    }
-
     @PostMapping("/allmessages")
     public ResponseEntity<List<ChatMessageResponseDto>> selectChatRoomsByChatRoomId(@RequestBody ChatMessageRequestDto chatMessageRequestDto) {
         String memberId = chatMessageRequestDto.getMemberId();
