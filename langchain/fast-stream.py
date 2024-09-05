@@ -10,7 +10,7 @@ import uvicorn
 import json
 import requests
 app = FastAPI()
-
+###
 s3_client = boto3.client('s3', region_name='ap-northeast-1')
 db_url = ""
 

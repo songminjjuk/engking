@@ -73,36 +73,48 @@ async def chat_evaluate_endpoint(request: Request):
     print("conversation_text: ", conversation_text)
     chat_evaluation_prompt = f"""
     You are an expert in evaluating language skills based on conversations. Below is a conversation between a user and an AI.
-    Please evaluate the user's language skills on a scale of 1 to 100 and provide detailed feedback on how they can improve.
+    Please evaluate the user's language skills on a scale of 1 to 100 and provide detailed feedback on how they can improve in Korean.
     Ensure your response is strictly in the following JSON format without any additional comments or text:
 
     {{
-        "score": "<numeric_score>",
-        "feedback": "<feedback>"
+        "score": "<percentage_score as string>",
+        "feedback": "<feedback in Korean>"
     }}
 
     The response should be a valid JSON string only.
     Conversation:
     {conversation_text}
+    Remember, your response should be a valid JSON string, and do not include any extra information or comments outside the JSON.
     """
 
     response = bedrock_llm.invoke(chat_evaluation_prompt)
-
-    # 응답이 유효한 JSON 형식인지 확인
+    memory_manager.delete_memory(user_id, conversation_id)
     try:
         response_content = json.loads(response.content)
+        feedback = response_content.get("feedback")
+        score = response_content.get("score")
+
+        return JSONResponse(content={
+            "user_id": user_id,
+            "conversation_id": conversation_id,
+            "score": str(score),
+            "feedback": feedback
+        })
     except json.JSONDecodeError as e:
+    # JSON 디코딩 오류 처리
         print(f"JSONDecodeError: {str(e)} - Response content: {response.content}")
         return JSONResponse(content={"error": "Invalid response from the LLM service"}, status_code=500)
 
-    memory_manager.delete_memory(user_id, conversation_id)
+    except ValueError as e:
+    # ValueError 처리 (예: total_questions가 0일 때)
+        print(f"ValueError: {str(e)}")
+        return JSONResponse(content={"error": str(e)}, status_code=400)
 
-    return JSONResponse(content={
-        "user_id": user_id,
-        "conversation_id": conversation_id,
-        "score": response_content.get("score"),
-        "feedback": response_content.get("feedback")
-    })
+    except Exception as e:
+    # 그 외의 일반적인 오류 처리
+        print(f"Unexpected error: {str(e)}")
+        return JSONResponse(content={"error": "An unexpected error occurred."}, status_code=500)
+    
 
 # 퀴즈 평가 API 엔드포인트
 @app.post("/quiz/evaluate")
@@ -125,7 +137,8 @@ async def quiz_evaluate_endpoint(request: Request):
     print("conversation_text: ", conversation_text)
     quiz_evaluation_prompt = f"""
     You are an expert at evaluating quiz sessions. Below is a conversation that includes a quiz session.
-    Please evaluate the session by filling in the number of correct answers, total questions, and provide feedback.
+    Please evaluate the session by calculating the score as a percentage based on the number of correct answers and total questions. 
+    Additionally, provide detailed feedback in Korean on the user's performance. 
     Make sure to return the response strictly in a valid JSON format.
 
     Conversation:
@@ -133,9 +146,8 @@ async def quiz_evaluate_endpoint(request: Request):
 
     Please respond in the following JSON format:
     {{
-        "correct_answers": "<number_of_correct_answers>",
-        "total_questions": "<total_number_of_questions>",
-        "feedback": "<your_feedback>"
+        "score": "<percentage_score as string>",
+        "feedback": "<feedback in Korean>"
     }}
 
     Remember, your response should be a valid JSON string, and do not include any extra information or comments outside the JSON.
@@ -144,15 +156,13 @@ async def quiz_evaluate_endpoint(request: Request):
     memory_manager.delete_memory(user_id, conversation_id)
     try:
         response_content = json.loads(response.content)
-        total_questions = int(response_content.get("total_questions"))
-        correct_answers = int(response_content.get("correct_answers"))
-        score = (correct_answers / total_questions) * 100
-        score = round(score, 1)
+        feedback = response_content.get("feedback")
+        score = response_content.get("score")
         return JSONResponse(content={
             "user_id": user_id,
             "conversation_id": conversation_id,
             "score": str(score),
-            "feedback": response_content.get("feedback")
+            "feedback": feedback
         })
     except json.JSONDecodeError as e:
     # JSON 디코딩 오류 처리
