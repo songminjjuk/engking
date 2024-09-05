@@ -19,21 +19,6 @@ public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
 
-//    @PostMapping("/create123123")
-//    public ResponseEntity<ChatRoomResponseDto> createChatRoom(@RequestBody ChatRoomRequestDto chatRoomRequestDto) {
-//        String memberId = chatRoomRequestDto.getMemberId();
-//        String topic = chatRoomRequestDto.getTopic();
-//        String difficulty = chatRoomRequestDto.getDifficulty();
-//
-//        ChatRoomResponseDto chatRoomResponseDto = chatRoomService.createChatRoom(memberId, topic, difficulty);
-//
-//        if (chatRoomResponseDto.isSuccess())
-//            return ResponseEntity.status(HttpStatus.CREATED).body(chatRoomResponseDto);
-//        else
-//            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(chatRoomResponseDto);
-//    }
-
-
     @PostMapping("/chatroomlist")
     public ResponseEntity<List<ChatRoomResponseDto>> selectChatRoomsByMemberId(@RequestBody ChatRoomRequestDto chatRoomRequestDto) {
         String memberId = chatRoomRequestDto.getMemberId();
