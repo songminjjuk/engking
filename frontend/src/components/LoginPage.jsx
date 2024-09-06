@@ -29,7 +29,7 @@ const LoginPage = ({ reload, setReload }) => {
   
     try {
       // Make API request to the login endpoint
-      const response = await axios.post('http://www.rapapa.site:8080/member/login', {
+      const response = await axios.post('http://35.72.9.14:8080/member/login', {
         email: formData.email,
         password: formData.password,
       });
@@ -41,9 +41,9 @@ const LoginPage = ({ reload, setReload }) => {
       if (response.data.email) {
         // Store user data in localStorage
         localStorage.setItem('email', response.data.email);
-        // Optionally store other user details if needed
-        localStorage.setItem('userId', response.data.memberId);
-        
+        localStorage.setItem('userId', response.data.id); // Use id instead of memberId
+        console.log(localStorage.getItem('userId')); // Log to confirm it's stored correctly
+  
         // Redirect to home page or another page
         setReload(!reload); // Update state to trigger re-render
         navigate('/'); // Redirect to home page or a protected route
@@ -62,6 +62,7 @@ const LoginPage = ({ reload, setReload }) => {
       console.error('Login Error:', error);
     }
   };
+  
   
 
   return (
