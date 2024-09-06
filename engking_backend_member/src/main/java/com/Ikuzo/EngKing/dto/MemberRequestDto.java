@@ -25,7 +25,7 @@ public class MemberRequestDto {
     private LocalDate birthday;
     private String intro;
     private Authority authority;
-    private String profileImgUrl;
+    //private String profileImgUrl;  // 없어도 될수도??
     //register, update request 할 때 넘기는 Dto
 
     public Member toMember(PasswordEncoder passwordEncoder) {
@@ -47,9 +47,7 @@ public class MemberRequestDto {
     }
 
     public void setImgUrl(){
-        //if(this.profileImgUrl==null) {
-            this.profileImgUrl="https://www.nintendo.co.kr/character/kirby/assets/img/home/kirby-puffy.png";
-        //}
+
     }
 
 

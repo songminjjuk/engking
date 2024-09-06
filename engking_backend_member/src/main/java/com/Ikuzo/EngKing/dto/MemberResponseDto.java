@@ -14,14 +14,14 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 public class MemberResponseDto {
-
+    private Long id;
     private String email;
     private String password;  //pwd도 바꾸게 하려면 추가해야함
     private String name;
     private String phone;
     private LocalDate birthday;
     private String intro;
-    private String profileImgUrl; //이미지도 고려해야 함...
+    private String profileImgUrl;
 
     public static MemberResponseDto getEmail(Member member){
 
@@ -30,13 +30,33 @@ public class MemberResponseDto {
                 .build();
     }
 
-    public static MemberResponseDto getInfo(Member member) {
+    public static MemberResponseDto getInfo(Member member,String url) {
         return MemberResponseDto.builder()
                 .email(member.getEmail())
                 .name(member.getName())
                 .phone(member.getPhone())
+                .birthday(member.getBirthday())
                 .intro(member.getIntro())
-                .profileImgUrl(member.getProfileImgUrl())
+                .profileImgUrl(url)
+                .build();
+    }
+
+    public static MemberResponseDto getUrl(String url){
+        return MemberResponseDto.builder()
+                .profileImgUrl(url)
+                .build();
+    }
+
+    public static MemberResponseDto pushUrl(MemberResponseDto memberResponseDto, String profileImgUrl) {
+        memberResponseDto.profileImgUrl=profileImgUrl;
+        return memberResponseDto;
+    }
+
+    public static MemberResponseDto getLogin(Member member) {
+
+        return MemberResponseDto.builder()
+                .id(member.getMemberId())
+                .email(member.getEmail())
                 .build();
     }
 
