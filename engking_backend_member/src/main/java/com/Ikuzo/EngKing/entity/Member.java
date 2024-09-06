@@ -28,8 +28,8 @@ public class Member {
     private String phone;
     private LocalDate birthday;
     private LocalDateTime signUpTime;
-    @Column(nullable = false)
-    private String profileImgUrl="https://i.pinimg.com/736x/e5/ee/88/e5ee88a1c9a2b87dcdc700bd328845ea.jpg";
+    @Column(nullable = true)   // 원래 false
+    private String profileImgUrl;
     private String intro;
     @Enumerated(EnumType.STRING)
     private Authority authority;
