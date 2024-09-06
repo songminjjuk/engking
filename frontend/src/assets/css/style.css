@@ -571,6 +571,14 @@
     justify-items: center; /* Centers the buttons horizontally within their grid cells */
     align-items: center; /* Centers buttons vertically */
 }
+.quizbutton-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Creates 4 columns */
+    grid-gap: 50px; /* Adds spacing between the buttons */
+    justify-items: center; /* Centers the buttons horizontally within their grid cells */
+    align-items: center; /* Centers buttons vertically */
+}
+
 
 .title-button {
     font-size: 24px; /* Larger button font size */
@@ -883,67 +891,67 @@ label[for="terms"] {
   .edit-info-button:hover {
     background-color: #f596b2;
   }
-
-
-.edit-info-container {
-  display: flex;
-  justify-content: center;
-  padding: 20px;
-}
-
-.edit-info-section {
-  background-color: #f7f5f8;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  width: 30%;
-  text-align: center;
-}
-
-.edit-info-section h2 {
-  font-size: 30px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.edit-info-form {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-field {
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-.form-field label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #333;
-}
-
-.form-field input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  font-size: 16px;
-}
-
-.save-button {
-  background-color: #f7a8c5;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 20px;
-  font-size: 16px;
-  cursor: pointer;
-}
-.delete-button {
-    margin-top: 10px;
+  
+  .edit-info-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .edit-info-section {
+    background-color: #f7f5f8;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    width: 30%;
+    text-align: center;
+  }
+  
+  .edit-info-section h2 {
+    font-size: 30px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .edit-info-form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .form-field {
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  
+  .form-field label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+  }
+  
+  .form-field input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+  }
+  
+  input[type="date"] {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    width: 100%;
+    color: #333;
+  }
+  
+  .save-button {
     background-color: #f7a8c5;
+    margin-top: 10px;
     color: white;
     padding: 10px 20px;
     border: none;
@@ -951,7 +959,26 @@ label[for="terms"] {
     font-size: 16px;
     cursor: pointer;
   }
-
+  
+  .save-button:hover {
+    background-color: #f596b2;
+  }
+  
+  .delete-button {
+    background-color: #f7a8c5;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  
+  .delete-button:hover {
+    background-color: #f596b2;
+  }
+  
 .save-button:hover {
   background-color: #f596b2;
 }
@@ -1060,9 +1087,6 @@ label[for="terms"] {
     max-width: 500px; /* Ensures it doesn't stretch too far on large screens */
     outline: none;
     border-radius: 5px;
-    color: #fff;
-    background-color: #fff;
-
   }
 .quiz-container {
     text-align: center;
@@ -1128,3 +1152,5 @@ label[for="terms"] {
   .logout-button:hover {
     background-color: #f596b2;
   }
+
+  

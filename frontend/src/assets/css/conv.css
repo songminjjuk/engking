@@ -113,3 +113,63 @@
     background-color: #f7a8c5;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
 }
+
+.conv-feedback {
+    background-color: #f4f4f4; /* Light grey background for feedback section */
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 100%;
+    margin-top: 20px;
+    margin-left: 20px;
+    margin-right: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.conv-feedback h3 {
+    margin-top: 0;
+    color: #e6588c; /* Use the same color as the buttons for consistency */
+}
+
+.conv-feedback p {
+    margin: 10px 0;
+    color: #333; /* Darker text for readability */
+}
+
+.conv-feedback strong {
+    color: #e6588c; /* Highlight scores in the same color as buttons */
+}
+
+.conv-feedback audio {
+    display: block;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.conv-audio-player {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+    display: block;
+    border-radius: 10px;
+    background-color: transparent;
+}
+.audio-player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 30px;
+    width: 100%;
+}
+  
+.custom-audio-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 500px;
+    background-color: transparent; /* Make the background transparent */
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Optional: Keeps a slight shadow */
+}

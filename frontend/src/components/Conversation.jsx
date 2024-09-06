@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import MicRecorder from 'mic-recorder-to-mp3';
 import bbongssoon from '../assets/img/bbongssoon.jpg';
 import usagi from '../assets/img/농담곰.jpeg';
 import '../assets/css/conv.css';
+
 
 const ConversationPage = () => {
     const location = useLocation();
@@ -18,47 +20,233 @@ const ConversationPage = () => {
     const [questions, setQuestions] = useState([]);
     const [chatRoomId, setChatRoomId] = useState('');
     const [messageId, setMessageId] = useState('');
+    const [feedback, setFeedback] = useState('');
+    const [feedbackResponse, setFeedbackResponse] = useState(null);
     const typingInterval = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
+    const questionsFetched = useRef(false);
+    const userId = localStorage.getItem('userId');
+    const recorder = useRef(new MicRecorder({ bitRate: 128 }));
 
+    const [questionAudioUrl, setQuestionAudioUrl] = useState('');
+    const [userResponseAudioUrl, setUserResponseAudioUrl] = useState('');
+    console.log(userId);
     useEffect(() => {
-        const fetchFirstQuestion = async () => {
+        if (title && difficulty && userId && !questionsFetched.current) {
+            fetchFirstQuestion();
+            questionsFetched.current = true;
+        }
+    }, [userId, title, difficulty]);
+
+    const fetchFirstQuestion = async () => {
+        try {
+            if (!userId) {
+                throw new Error('User ID is not available.');
+            }
+
+            const response = await axios.post('http://13.115.48.150:8080/chat/firstquestion', {
+                memberId: userId,
+                topic: title,
+                difficulty: difficulty
+            });
+
+            const { success, firstQuestion, audioFileUrl, chatRoomId, messageId } = response.data;
+            if (success) {
+                setQuestions([{ text: '  ' + firstQuestion, audioFileUrl }]);
+                setQuestionAudioUrl(audioFileUrl);
+                setChatRoomId(chatRoomId);
+                setMessageId(messageId);
+                setTypingFinished(false);
+                console.log(audioFileUrl);
+            } else {
+                console.error('Failed to fetch the first question.');
+            }
+        } catch (error) {
+            setQuestions([{ text: 'First Question', audioUrl }]);
+            setQuestionAudioUrl('');
+            setChatRoomId('1');
+            setMessageId('1');
+            setTypingFinished(false);
+        }
+    };
+
+
+
+    const uploadToS3 = async (mp3Blob) => {
+        try {
+            const fileName = `audio_${new Date().getTime()}.mp3`;
+
+            // Get a presigned URL from the server
+            const presignedResponse = await axios.post('http://13.115.48.150:8080/audio/uploadurl', {
+                chatRoomId: chatRoomId,
+                memberId: localStorage.getItem('userId'),
+                messageId: String(Number(messageId) + 1)
+            });
+
+            const { audioFileUrl, success } = presignedResponse.data;
+            if (!success) {
+                throw new Error('Failed to get presigned URL from the server');
+            }
+            const preSignedUrl = audioFileUrl;
+
+            // Upload the MP3 to S3 using the presigned URL
+            const uploadResponse = await axios.put(preSignedUrl, mp3Blob, {
+                headers: {
+                    'Content-Type': 'audio/mp3',
+                },
+            });
+
+            console.log('Upload Response Status:', uploadResponse.status);
+
+            return preSignedUrl.split('?')[0];
+        } catch (error) {
+            console.error('Error uploading file to S3:', error);
+            throw error;
+        }
+    };
+
+    const handleNextQuestion = async () => {
+        if (audioUrl) {
             try {
-                const memberId = localStorage.getItem('userId'); // Retrieve member ID from localStorage
-                if (!memberId) {
-                    throw new Error('User ID is not available.');
+                // Upload audio file to S3
+                const response = await fetch(audioUrl);
+                const audioBlob = await response.blob();
+                const mp3Blob = new Blob([audioBlob], { type: 'audio/mp3' }); // Use the same blob
+                const s3Url = await uploadToS3(mp3Blob);
+
+                if (!s3Url) {
+                    throw new Error('Failed to upload audio to S3');
                 }
 
-                const response = await axios.post('http://www.rapapa.site:8080/chat/firstquestion', {
-                    memberId: memberId,
+                const responseNextQuestion = await axios.post('http://13.115.48.150:8080/chat/nextquestion', {
+                    memberId: localStorage.getItem('userId'),
+                    chatRoomId: chatRoomId,
+                    messageId: String(Number(messageId) + 1),
                     topic: title,
                     difficulty: difficulty
                 });
 
-                const { chatRoomId, messageId, firstQeustion } = response.data;
-                setChatRoomId(chatRoomId);
-                setMessageId(messageId);
-                setQuestions([firstQeustion]);
+                const { success, nextQuestion, audioUrl: newAudioUrl, messageId: newMessageId } = responseNextQuestion.data;
+                if (success) {
+                    setQuestions(prevQuestions => [...prevQuestions, { text: nextQuestion, audioUrl: newAudioUrl }]);
+                    setUserResponseAudioUrl(s3Url);
+                    setMessageId(newMessageId);
+                    setQuestionIndex(prevIndex => prevIndex + 1);
+                    setCurrentText('');
+                    setAudioUrl(null);
+                    setIsRecording(false);
+                    setTypingFinished(false);
+                } else {
+                    console.error('Failed to fetch the next question.');
+                }
             } catch (error) {
-                console.error('Error fetching the first question:', error);
+                console.error('Error processing the next question:', error);
             }
-        };
+        }
+    };
 
-        fetchFirstQuestion();
-    }, [title, difficulty]);
+    const submitFeedback = async () => {
+        try {
+            if (!userId || !chatRoomId || !messageId) {
+                throw new Error('Required data is missing.');
+            }
+    
+            const response = await axios.post('http://13.115.48.150:8080/chat/endquestion', {
+                memberId: userId,
+                chatRoomId: chatRoomId,
+                messageId: messageId,
+                endRequest: true
+            });
+    
+            const { success, feedback: responseFeedback, score, endQuestion, audioFileUrl } = response.data;
+            if (success) {
+                setFeedbackResponse({ feedback: responseFeedback, score, endQuestion, audioFileUrl });
+    
+                // Navigate to convresult with feedback and additional data
+                navigate('/convresult', {
+                    state: {
+                        title: title,
+                        difficulty: difficulty,
+                        feedback: responseFeedback,
+                        score: score,
+                        endQuestion: endQuestion,
+                        audioFileUrl: audioFileUrl
+                    }
+                });
+            } else {
+                console.error('Failed to submit feedback.');
+            }
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+        }
+    };
+    
+
+    const handleMicClick = () => {
+        if (!isRecording) {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+        setIsRecording(prevState => !prevState);
+    };
+
+    const startRecording = () => {
+        recorder.current.start().then(() => {
+            console.log("Recording started");
+        }).catch(error => {
+            console.error('Error starting recording:', error);
+        });
+    };
+
+    const stopRecording = async () => {
+        try {
+            const [buffer] = await recorder.current.stop().getMp3(); // Stop recording and get MP3 buffer
+            const mp3Blob = new Blob(buffer, { type: 'audio/mp3' });
+            setAudioUrl(URL.createObjectURL(mp3Blob));
+        } catch (error) {
+            console.error('Error stopping recording:', error);
+        }
+    };
+
+    const handleDownload = () => {
+        if (audioUrl) {
+            const link = document.createElement('a');
+            link.href = audioUrl;
+            link.download = 'recording.mp3'; // Set the correct file extension
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
+    const handleSendClick = async () => {
+        const feedbackData = await submitFeedback();
+        if (feedbackData) {
+            navigate('/convresult', { state: feedbackData });
+        }
+    };
 
     useEffect(() => {
-        if (questionIndex < questions.length) {
-            setTypingFinished(false);
-            typeQuestion(questions[questionIndex]);
+        if (questions.length > 0 && !typingFinished) {
+            typeQuestion(questions[questionIndex]?.text || '');
         }
-        return () => clearInterval(typingInterval.current);
-    }, [questionIndex, questions]);
+        return () => {
+            if (typingInterval.current) {
+                clearInterval(typingInterval.current);
+            }
+        };
+    }, [questionIndex, questions, typingFinished]);
 
     const typeQuestion = (question) => {
         let charIndex = 0;
         setCurrentText('');
+        setTypingFinished(false);
+        if (typingInterval.current) {
+            clearInterval(typingInterval.current);
+        }
+
         typingInterval.current = setInterval(() => {
             setCurrentText(prev => {
                 const newText = prev + question[charIndex];
@@ -72,72 +260,10 @@ const ConversationPage = () => {
         }, 50);
     };
 
-    const handleMicClick = () => {
-        if (!isRecording) {
-            startRecording();
-        } else {
-            stopRecording();
-        }
-        setIsRecording(prevState => !prevState);
-    };
-
-    const startRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream);
-            mediaRecorderRef.current.ondataavailable = event => {
-                audioChunksRef.current.push(event.data);
-            };
-            mediaRecorderRef.current.start();
-        } catch (err) {
-            console.error("Error accessing microphone", err);
-        }
-    };
-
-    const stopRecording = () => {
-        mediaRecorderRef.current.stop();
-        mediaRecorderRef.current.onstop = () => {
-            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            setAudioUrl(audioUrl);
-            audioChunksRef.current = [];
-        };
-    };
-
-    const handleSendClick = async () => {
-        if (audioUrl) {
-            try {
-                const response = await axios.post('http://www.rapapa.site:8080/chat/nextquestion', {
-                    memberId: localStorage.getItem('userId'), // Retrieve member ID from localStorage
-                    chatRoomId: chatRoomId,
-                    messageId: messageId,
-                    messageText: 'Audio response placeholder', // Replace with the actual transcribed text or some placeholder
-                });
-
-                const { messageId: newMessageId, nextQeustion } = response.data;
-                setMessageId(newMessageId);
-                setQuestions(prevQuestions => [...prevQuestions, nextQeustion]);
-                handleNextQuestion();
-            } catch (error) {
-                console.error('Error sending the audio response:', error);
-            }
-        }
-    };
-
-    const handleNextQuestion = () => {
-        if (questionIndex < questions.length - 1) {
-            setQuestionIndex(prevIndex => prevIndex + 1);
-            setCurrentText('');
-            setAudioUrl(null);
-            setIsRecording(false);
-            setTypingFinished(false);
-        }
-    };
-
     return (
         <div className="conv-page">
             <div className="conv-messages-container">
-                {questions.slice(0, questionIndex + 1).map((question, index) => (
+                {questions.length > 0 && questions.slice(0, questionIndex + 1).map((question, index) => (
                     <div key={index} className="conv-message conv-character-message">
                         <img
                             src={bbongssoon}
@@ -145,14 +271,19 @@ const ConversationPage = () => {
                             className="conv-character-image"
                         />
                         <div className="conv-message-content">
-                            <span>{`Q${index + 1}. ${index < questionIndex ? question : (index === questionIndex ? currentText : '')}`}</span>
+                            <span>{`Q${index + 1}. ${index < questionIndex ? question.text : (index === questionIndex ? currentText : '')}`}</span>
+                            {question.audioFileUrl && index === questionIndex && (
+                                <div className="conv-audio-player">
+                                    <audio controls src={question.audioFileUrl}></audio>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
                 {questionIndex < questions.length && typingFinished && (
                     <div className="conv-message conv-user-message">
                         <img
-                            src={usagi}  // User image
+                            src={usagi}
                             alt="User"
                             className="conv-user-image"
                         />
@@ -167,14 +298,27 @@ const ConversationPage = () => {
                                 {audioUrl && (
                                     <div className="conv-audio-player">
                                         <h3>Your Recording:</h3>
+                                        <button
+                                            className="conv-button"
+                                            onClick={handleDownload}
+                                        >
+                                            Download
+                                        </button>
                                         <audio controls src={audioUrl}></audio>
                                     </div>
                                 )}
-                                <button className="conv-button" onClick={handleSendClick}>
-                                    Send
+                                <button
+                                    className="conv-button"
+                                    onClick={handleNextQuestion}
+                                    disabled={!audioUrl}
+                                >
+                                    Next
                                 </button>
-                                <button className="conv-button" onClick={handleNextQuestion}>
-                                    Next Question
+                                <button
+                                    className="conv-button"
+                                    onClick={handleSendClick}
+                                >
+                                    Send Feedback
                                 </button>
                             </div>
                         </div>
