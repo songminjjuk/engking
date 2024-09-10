@@ -47,10 +47,6 @@ public class MemberResponseDto {
                 .build();
     }
 
-    public static MemberResponseDto pushUrl(MemberResponseDto memberResponseDto, String profileImgUrl) {
-        memberResponseDto.profileImgUrl=profileImgUrl;
-        return memberResponseDto;
-    }
 
     public static MemberResponseDto getLogin(Member member) {
 
@@ -59,7 +55,6 @@ public class MemberResponseDto {
                 .email(member.getEmail())
                 .build();
     }
-
 
 
 }

@@ -109,9 +109,9 @@ public class MemberService {
         // entity를 responsedto에 저장해서 반환해라!!!
 
         //memberRepository.save(member);  // save의 인자가 반환값
-        String keyName=String.format("image/USER_ID_%s.jpg",id);
+        String keyName=String.format("image/USER_ID_%s.PNG",id.toString());
         Map<String,String> metadata=new HashMap<>();
-        metadata.put("Content-Type","image/jpg");
+        metadata.put("Content-Type","image/png");
         String url=s3Service.createPresignedPutUrl(bucketName, keyName,metadata);
         memberRepository.save(member);
         return MemberResponseDto.getUrl(url);  //url 담은 responseDto 반환
@@ -132,9 +132,10 @@ public class MemberService {
         //member.getEmail()을 response에 넣자
         /************************************************/
         // url; 생성하기!!!!!! **********************************/
-        String bucketName="engking-bucket-image";
+        //String bucketName="engking-bucket-image";
 
-        String keyName=String.format("/image/USER_ID_%s.jpg",id);
+        String keyName=String.format("image/USER_ID_%s.PNG",id.toString());
+        //String keyName="image/USER_ID_"+id.toString()+".jpeg";
         String url=s3Service.createPresignedGetUrl(bucketName, keyName);
 
 
