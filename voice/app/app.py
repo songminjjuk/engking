@@ -5,9 +5,23 @@ from dotenv import load_dotenv
 import os
 import importlib
 from fastapi.responses import JSONResponse
+import re  # 정규 표현식 모듈 추가
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
+
+# 특수 문자 확인 함수
+def contains_special_characters(s: str) -> bool:
+    # 정규 표현식으로 특수 문자 확인
+    return bool(re.search(r'[^a-zA-Z0-9]', s))
+
+aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+
+# AWS 비밀 키에 특수 문자가 있는지 확인
+if contains_special_characters(aws_secret_access_key):
+    print("AWS_SECRET_ACCESS_KEY에 특수 문자가 포함되어 있습니다.")
+else:
+    print("AWS_SECRET_ACCESS_KEY에 특수 문자가 포함되어 있지 않습니다.")
 
 app = FastAPI()
 

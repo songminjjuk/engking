@@ -3,10 +3,18 @@ import boto3
 import os
 import random
 
-# 환경 변수에서 S3 버킷 이름 로드
-BUCKET_NAME = os.getenv('BUCKET_NAME')
+# AWS 인증 정보 설정
+aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+bucket_name = os.getenv('BUCKET_NAME')
+region_name = os.getenv('REGION_NAME')
 
-s3_client = boto3.client('s3')
+s3_client = boto3.client(
+    's3',
+    region_name=region_name,
+    aws_access_key_id=aws_access_key_id,
+    aws_secret_access_key=aws_secret_access_key
+)
 
 def generate_unique_filename(base_name):
     """기본 이름을 바탕으로 겹치지 않는 파일명 생성"""
@@ -14,7 +22,7 @@ def generate_unique_filename(base_name):
     counter = 1
 
     # 파일이 존재하는지 확인
-    while check_if_object_exists(BUCKET_NAME, filename):
+    while check_if_object_exists(bucket_name, filename):
         filename = f"{base_name.split('.')[0]}_{counter}.{base_name.split('.')[-1]}"
         counter += 1
 

@@ -1,6 +1,6 @@
 # app/routers/put_url.py
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel,field_validator
 from app.modules.s3 import generate_presigned_url
 
 router = APIRouter()
@@ -8,6 +8,12 @@ router = APIRouter()
 # 요청 본문을 정의하는 Pydantic 모델
 class FilenameRequest(BaseModel):
     filename: str
+
+    @field_validator('filename')
+    def check_not_empty(cls, value):
+        if not value:
+            raise ValueError('이 필드는 비어 있을 수 없습니다.')
+        return value
 
 @router.post("/api/create-put-url/")
 async def create_put_url(request: FilenameRequest):

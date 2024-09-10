@@ -23,7 +23,7 @@
 
 ### First Question 생성
 
-- URL: `/api/first-question`
+- URL: `/api/first-question/`
 - 메소드: POST
 - 요청 본문:
   ```json
@@ -48,14 +48,17 @@
 
 ### Next Question 처리
 
-- URL: `/api/next-question`
+- URL: `/api/next-question/`
 - 메소드: POST
 - 요청 본문:
   ```json
   {
     "memberId": "string",
     "chatRoomId": "string",
-    "messageId": "string"
+    "messageId": "string",
+    "filename": "string",
+    "topic": "string",
+    "difficulty": "string"
   }
   ```
 - 응답:
@@ -66,39 +69,16 @@
       "nextQuestion": "string",
       "memberId": "string",
       "chatRoomId": "string",
+      "messageId": "string",
       "audioUrl": "string"
-    }
-    ```
-
-### 음성 저장 완료 알림 및 텍스트 변환
-
-- URL: `/api/transcription`
-- 메소드: POST
-- 요청 본문:
-  ```json
-  {
-    "memberId": "string",
-    "chatRoomId": "string",
-    "audioUrl": "string"
-  }
-  ```
-- 응답:
-  - 200 OK
-    ```json
-    {
-      "success": true,
-      "memberId": "string",
-      "responseText": "string",
-      "audioUrl": "string"
-   
     }
     ```
 
 ### Answer 및 Feedback 처리
 
-- **URL**: `/api/feedback`
-- **메소드**: POST
-- **요청 본문**:
+- URL: `/api/feedback`
+- 메소드: POST
+- 요청 본문:
   ```json
   {
     "memberId": "string",
@@ -107,8 +87,8 @@
     "responseText": "string"
   }
   ```
-- **응답**:
-  - **200 OK**
+- 응답:
+  - 200 OK
     ```json
     {
       "success": true,
@@ -138,4 +118,28 @@
       "success": false,
       "message": "서버에서 오류가 발생했습니다."
     }
+
+### 음성 저장 완료 알림 및 텍스트 변환
+
+- URL: `/api/transcription`
+- 메소드: POST
+- 요청 본문:
+  ```json
+  {
+    "memberId": "string",
+    "chatRoomId": "string",
+    "audioUrl": "string"
+  }
+  ```
+- 응답:
+  - 200 OK
+    ```json
+    {
+      "success": true,
+      "memberId": "string",
+      "responseText": "string",
+      "audioUrl": "string"
+   
+    }
+    ```
     ``` 

@@ -1,6 +1,7 @@
 # Ignore all files and directories starting with . except .gitignore
 .*
 !.gitignore
+docker-compose.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

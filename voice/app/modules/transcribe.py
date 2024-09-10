@@ -1,14 +1,13 @@
-# app/modules/transcribe.py
 import boto3
 import os
 import time
 import requests
 
-from app.modules.s3 import get_full_path
+from app.modules.s3 import get_full_path, check_if_object_exists
 
 # 환경 변수 체크
-aws_access_key_id = os.getenv('AWS_ACCESS_KEY')
-aws_secret_access_key = os.getenv('AWS_SECRET_KEY')
+aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 region_name = os.getenv('REGION_NAME')
 bucket_name = os.getenv('BUCKET_NAME')
 
@@ -23,10 +22,15 @@ transcribe = boto3.client(
 )
 
 async def transcribe_audio(filename: str):
+    # Validate filename
+    # if not filename:
+    #     raise ValueError("filename cannot be empty")
+
+    # S3에 파일이 존재하는지 확인 (existing code)
+    if not check_if_object_exists(bucket_name, filename):
+        raise Exception(f"파일이 S3 버킷에 존재하지 않습니다: {filename}")
+
     job_name = "transcription_job_" + str(int(time.time()))
-
-    # filename = presigned_url.split('?')[0].split('/')[-1]
-
     s3_uri = f"s3://{bucket_name}/{get_full_path(filename)}"
 
     try:
@@ -43,7 +47,6 @@ async def transcribe_audio(filename: str):
     # 작업 상태 확인
     while True:
         response = transcribe.get_transcription_job(TranscriptionJobName=job_name)
-
         if response['TranscriptionJob']['TranscriptionJobStatus'] in ['COMPLETED', 'FAILED']:
             break
         time.sleep(1)
