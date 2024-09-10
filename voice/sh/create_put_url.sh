@@ -8,7 +8,9 @@ memberId="1234"
 chatRoomId="1234_2024-09-02T00:00:00"
 
 # 현재 시각을 HHMM 형식으로 가져와서 messageId로 설정
-messageId=$(date +%H%M)  # ex) 1727
+# messageId=$(date +%H%M)  # ex) 1727
+messageId="1"
+
 audioFileName="${memberId}/${chatRoomId}/${messageId}.mp3"
 
 echo $audioFileName
@@ -23,6 +25,7 @@ presigned_response=$(curl -s -X POST "http://127.0.0.1:8000/api/create-put-url/"
 # Extract the presigned URL
 presignedUrl=$(echo "$presigned_response" | jq -r '.presignedUrl')
 
+echo 'pu:'
 echo $presignedUrl
 
 # 업로드할 오디오 파일이 존재하는지 확인
@@ -36,6 +39,10 @@ echo "Uploading audio file to presigned URL..."
 curl -X PUT "$presignedUrl" \
 -H "Content-Type: audio/mpeg" \
 --data-binary @"$audioFilePath"
+
+echo "curl -X PUT "$presignedUrl" \
+-H "Content-Type: audio/mpeg" \
+--data-binary @"$audioFilePath""
 
 echo "업로드가 완료되었습니다."
 
