@@ -6,6 +6,7 @@ import com.Ikuzo.EngKing.dto.MemberResponseDto;
 import com.Ikuzo.EngKing.entity.Member;
 import com.Ikuzo.EngKing.service.MemberService;
 import com.Ikuzo.EngKing.service.S3Service;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -74,7 +75,7 @@ public class MemberController {
         return ResponseEntity.ok(mrd);
     }
 
-    @GetMapping("/info")
+    @PostMapping("/info")
     public ResponseEntity<MemberResponseDto> memberInfo(@RequestParam String email) {
         Member member = memberService.memberList(email);
         //MemberRequestDto mrequestd= MemberRequestDto.builder().email(email).build();  //email을 가진 dto 생성
@@ -82,10 +83,13 @@ public class MemberController {
         // email만 받아서 해당 id를 requestDto에 넣을 것인가??
         MemberRequestDto memberRequestDto= MemberRequestDto.builder().id(member.getMemberId()).build();
         //dto로 요청을 보내고 응답dto를 받자
+        //MemberRequestDto memberRequestDto=MemberRequestDto.builder().id(id).build();
         MemberResponseDto mrd=memberService.memberInfo(memberRequestDto);
 
         return ResponseEntity.ok(mrd);
     }  //email 관련 쿼리로 멤버 정보 조회
+
+
 
 
 
