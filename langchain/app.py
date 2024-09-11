@@ -192,6 +192,9 @@ app = FastAPI()
 app.include_router(chat_routes.router)
 app.include_router(quiz_routes.router)
 app.include_router(evaluate_routes.router)
+@app.get("/healthz")
+async def health_check():
+    return {"status": "ok"}
 
 if __name__ == '__main__':
     uvicorn.run(app, host=settings.HOST, port=settings.PORT)

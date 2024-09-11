@@ -29,7 +29,7 @@ class MemoryManager:
                     memory.chat_memory.add_ai_message(AIMessage(content=message_text))
                 elif message_text:
                     memory.chat_memory.add_user_message(HumanMessage(content=message_text))
-
+            print("memory: ", memory)
             return memory
         else:
             return None
