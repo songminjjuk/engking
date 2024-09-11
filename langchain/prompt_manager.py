@@ -1,7 +1,6 @@
 from langchain.prompts import ChatPromptTemplate
 
-class PromptGenerator:
-    quiz_example_output = """
+quiz_example_output = """
     Example format:
     <Question Number> <Question>
     A) <Option 1>
@@ -10,7 +9,8 @@ class PromptGenerator:
     D) <Option 4>
     """
 
-    def create_chat_prompt(self, difficulty, scenario, history, first):
+class PromptManager:
+    def create_chat_prompt_template(self, scenario, difficulty, first):
         scenario_prompts = {
             "hamburger": (
                 "You are an expert in helping customers order hamburgers. Guide the user through ordering a hamburger. "
@@ -62,58 +62,67 @@ class PromptGenerator:
                 "Finally, discuss the user's thoughts on recent trends in the music industry, such as streaming services, vinyl revival, or the impact of social media on music discovery."
             )
         }
-
-
         difficulty_prompts = {
             "Easy": "Additionally, the difficulty level is Easy, Use simple and direct language. Keep your responses short and avoid complex details.",
             "Normal": "Additionally, the difficulty level is Normal, Use moderate language with some detail. Provide clear explanations but avoid overly complex terms.",
             "Hard": "Additionally, the difficulty level is Hard, Use complex and detailed language. Include nuanced explanations and advanced vocabulary in your responses."
         }
 
-        scenario_prompt = scenario_prompts.get(scenario)
-        difficulty_prompt = difficulty_prompts.get(difficulty)
+        scenario_prompt = scenario_prompts.get(scenario, "You are a helpful assistant.")
+        difficulty_prompt = difficulty_prompts.get(difficulty, "Use appropriate language.")
         if first:
-            prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("system", f"{scenario_prompt} {difficulty_prompt}. Please ask the user a question directly without any introductory phrases.\nchat_history: {history}"),
-                ("human", "{{input}}")
-            ]
-        )
+            system_prompt = f"{scenario_prompt} {difficulty_prompt} Please ask the user a question directly without any introductory phrases.\nchat_history:{{history}}"
         else:
-            prompt_template = ChatPromptTemplate.from_messages(
+            system_prompt = f"Please remember the initial instructions and continue to generate responses accordingly. Ask the user a question directly without any introductory phrases.\nchat_history:{{history}}"
+            
+        prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"Please ask the user a question directly without any introductory phrases.\nchat_history: {history}"),
-                ("human", "{{input}}")
+                ("system", system_prompt),
+                ("human", "{input}")
             ]
         )
         return prompt_template
 
-    def create_quiz_prompt(self, quiz_type, difficulty, history, first):
+    def create_quiz_prompt_template(self, quiz_type, difficulty, first):
         quiz_type_prompts = {
             "vocabulary": "You are an expert at creating vocabulary quizzes. Create a quiz where the user needs to identify the correct word based on the context.",
             "grammar": "You are an expert at creating grammar quizzes. Create a quiz where the user needs to identify the correct grammar usage."
         }
 
         difficulty_prompts = {
-            "Easy": "Additionally, the difficulty level is Easy, so create the quiz with simple and direct expressions.",
-            "Normal": "Additionally, the difficulty level is Normal, so create the quiz with moderate expressions that include some details.",
-            "Hard": "Additionally, the difficulty level is Hard, so create the quiz with complex and detailed expressions."
+            "Easy": "Additionally, the difficulty level is Easy, so create the quiz with simple and clear expressions similar to those found in the easier sections of TOEIC exams. "
+                    "Use basic vocabulary and straightforward sentence structures, ensuring the question is accessible to beginners.",
+            
+            "Normal": "Additionally, the difficulty level is Normal, so create the quiz with clear and concise expressions similar to those found in TOEIC exams. "
+                    "Ensure that the language and structure are practical and commonly used in everyday situations, focusing on moderate difficulty.",
+
+            "Hard": "Additionally, the difficulty level is Hard, so create the quiz with expressions similar to the more challenging sections of TOEIC exams. "
+                    "Use more complex sentence structures and a wider range of vocabulary, but still keep it relevant to TOEIC standards."
         }
 
-        quiz_prompt = quiz_type_prompts.get(quiz_type)
-        difficulty_prompt = difficulty_prompts.get(difficulty)
+        quiz_prompt = quiz_type_prompts.get(quiz_type, "You are a helpful assistant creating quizzes.")
+        difficulty_prompt = difficulty_prompts.get(difficulty, "Use appropriate language.")
+
+        # 첫 번째 요청일 때는 상세한 지침을 포함하여 프롬프트 생성
         if first:
-            prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {self.quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions.\nchat_history: {history}"),
-                ("human", "{{input}}")
-            ]
-        )
+            system_prompt = f"{quiz_prompt} {difficulty_prompt} Please generate only one quiz question. Use the following format: {quiz_example_output}. " \
+                            "Do not provide explanations or feedback. Focus solely on generating the quiz question in the specified format without any introductory text. " \
+                            f"\nchat_history:{{history}}"
         else:
-            prompt_template = ChatPromptTemplate.from_messages(
+            # 이후 요청일 때는 간단하게 지침을 상기시키는 메시지를 포함
+            system_prompt = f"Please remember the initial instructions: generate only one quiz question in the specified format. " \
+                            "Do not provide any feedback or explanations. Focus solely on generating the quiz question. " \
+                            f"Remember that Use the following format: {quiz_example_output}" \
+                            f"\nchat_history:{{history}}"
+
+        # 프롬프트 템플릿 구성
+        prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"Generate only one quiz question.\nchat_history: {history}"),
-                ("human", "{{input}}")
+                ("system", system_prompt),
+                ("human", "{input}")
             ]
         )
+
         return prompt_template
+
+prompt_manager = PromptManager()

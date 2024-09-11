@@ -1,21 +1,17 @@
+import os
 import boto3
+import json
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from langchain_aws import ChatBedrock
+from langchain.memory import ConversationBufferMemory, RedisChatMessageHistory
+from langchain.chains import ConversationChain
 from langchain.prompts import ChatPromptTemplate
-from langchain.memory import ConversationBufferMemory
-from langchain.schema import HumanMessage, AIMessage
 from datetime import datetime
 import uvicorn
-import json
-import requests
+from langchain.schema import HumanMessage, AIMessage
+import redis
 app = FastAPI()
-###
-s3_client = boto3.client('s3', region_name='ap-northeast-1')
-db_url = ""
-
-# S3 버킷 이름
-S3_BUCKET_NAME = 'mmmybucckeet'
 quiz_example_output = """
     Example format:
     <Question Number> <Question>
@@ -24,8 +20,14 @@ quiz_example_output = """
     C) <Option 3>
     D) <Option 4>
     """
-# 전역 메모리 저장소
-memory_store = {}
+# S3 버킷 설정
+S3_BUCKET_NAME = 'mmmybucckeet'
+s3_client = boto3.client('s3', region_name='ap-northeast-1')
+
+# Redis URL 가져오기
+redis_url = ""
+
+# Bedrock 클라이언트 초기화
 def initialize_bedrock_client(model_id, region_name):
     return ChatBedrock(
         model_id=model_id,
@@ -40,57 +42,36 @@ bedrock_llm = initialize_bedrock_client(
     region_name="ap-northeast-1"
 )
 
+# 메모리 관리 함수
 def get_memory(user_id, conversation_id):
-    # 이 부분이 back api를 호출해서 DynampDB에서
-    #  user_id, conversation_id를 기반으로 조회해서 
-    # 값을 가져오는 걸로 바뀔 듯
-    # memory_key = f"{user_id}_{conversation_id}"
-    
-    # if memory_key not in memory_store:
-    #     memory_store[memory_key] = ConversationBufferMemory(return_messages=True, memory_key="history", input_key="human", output_key="ai")
-    # return memory_store[memory_key]
-    api_endpoint = f"{db_url}/chatmessage/allmessages"
-    request_data = {
-        "user_id": user_id,            
-        "conversation_id": conversation_id  
-    }
-    # API 요청 보내기
-    response = requests.post(api_endpoint, json=request_data)
+    print("Connecting to Redis:", redis_url)
+    # 혹은 단순한 연결 테스트
+    try:
+        r = redis.StrictRedis.from_url(redis_url)
+        r.ping()
+        print("Redis connection successful")
+    except Exception as e:
+        print("Failed to connect to Redis:", str(e))
 
-    if response.status_code == 200:
-        # 성공적으로 데이터를 받아온 경우
-        response_data = response.json()
+    memory_key = f"{user_id}_{conversation_id}"
+    print("memory_key: ", memory_key)
+    print("Creating RedisChatMessageHistory...")
+    chat_history = RedisChatMessageHistory(session_id=memory_key, url=redis_url, key_prefix="chat_history:")
+    print("RedisChatMessageHistory created successfully")
+    print("Creating ConversationBufferMemory...")
+    memory = ConversationBufferMemory(chat_memory=chat_history, return_messages=True, memory_key="history")
+    print("ConversationBufferMemory created successfully")
+    print("memory: ", memory)
+    return memory
 
-        memory_key = f"{user_id}_{conversation_id}"
-        # 메모리 객체가 없으면 생성
-        if memory_key not in memory_store:
-            memory_store[memory_key] = ConversationBufferMemory(return_messages=True, memory_key="history", input_key="human", output_key="ai")
-
-        memory = memory_store[memory_key]
-
-
-        # 응답 데이터를 memory에 저장
-        for message in response_data:
-            sender_id = message.get("senderId")
-            message_text = message.get("messageText", "")
-
-            if sender_id == "AI":
-                memory.save_context({"human": None}, {"ai": message_text})
-            else:
-                memory.save_context({"human": message_text}, {"ai": None})
-        print("get_memory: ", memory)
-        return memory
-    else:
-        # 요청이 실패한 경우 에러 처리
-        print(f"Failed to retrieve messages. Status code: {response.status_code}")
-        print("Error:", response.text)
-        return None
+# 메모리 삭제 함수
 def delete_memory(user_id, conversation_id):
     memory_key = f"{user_id}_{conversation_id}"
-    if memory_key in memory_store:
-        del memory_store[memory_key]
+    chat_history = RedisChatMessageHistory(session_id=memory_key, url=redis_url, key_prefix="chat_history:")
+    chat_history.clear()
 
-def create_chat_prompt_template(scenario, difficulty, history, first):
+# Chat Prompt 템플릿 생성 함수
+def create_chat_prompt_template(scenario, difficulty, first):
     scenario_prompts = {
             "hamburger": (
                 "You are an expert in helping customers order hamburgers. Guide the user through ordering a hamburger. "
@@ -154,21 +135,21 @@ def create_chat_prompt_template(scenario, difficulty, history, first):
     if first:
         prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"{scenario_prompt} {difficulty_prompt} Please ask the user a question directly without any introductory phrases.\nchat_history:{history}"),
-                ("human", "{{input}}")
+                ("system", f"{scenario_prompt} {difficulty_prompt} Please ask the user a question directly without any introductory phrases.\nchat_history:{{history}}"),
+                ("human", "{input}")
             ]
         )
     else:
         prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"Please ask the user a question directly without any introductory phrases.\nchat_history:{history}"),
-                ("human", "{{input}}")
+                ("system", f"Please ask the user a question directly without any introductory phrases.\nchat_history:{{history}}"),
+                ("human", "{input}")
             ]
         )
-    # print("prompt_template", prompt_template)
+    print("prompt_template", prompt_template)
     return prompt_template
 
-def create_quiz_prompt_template(quiz_type, difficulty, history, first):
+def create_quiz_prompt_template(quiz_type, difficulty, first):
     quiz_type_prompts = {
         "vocabulary": "You are an expert at creating vocabulary quizzes. Create a quiz where the user needs to identify the correct word based on the context.",
         "grammar": "You are an expert at creating grammar quizzes. Create a quiz where the user needs to identify the correct grammar usage."
@@ -187,111 +168,197 @@ def create_quiz_prompt_template(quiz_type, difficulty, history, first):
     if first:
         prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{history}"),
-                ("human", "{{input}}")
+                ("system", f"{quiz_prompt} {difficulty_prompt} Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{{history}}"),
+                ("human", "{input}")
             ]
         )
     else:
         prompt_template = ChatPromptTemplate.from_messages(
             [
-                ("system", f"Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{history}"),
-                ("human", "{{input}}")
+                ("system", f"Generate only one quiz question. Use the following format: {quiz_example_output}. Ask a question right away without any introductory text, and do not generate multiple questions. and Do not include any introductory text, and do not deviate from the task of generating a single quiz question.\nchat_history:{{history}}"),
+                ("human", "{input}")
             ]
         )
 
-    # print("prompt_template", prompt_template)
+    print("prompt_template", prompt_template)
     return prompt_template
 
-# async def stream_chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input):
-#     memory = get_memory(user_id, conversation_id)
-    
-#     # 대화 히스토리를 가져옴
-#     history = memory.load_memory_variables({}).get("history", "")
-#     prompt_template = create_chat_prompt_template(difficulty, scenario, history)
-#     prompt_text = prompt_template.format(input=user_input)
-    
-#     async def stream_response():
-#         full_response = ""
-#         async for chunk in bedrock_llm.astream(prompt_text):
-#             response_content = chunk.content
-#             print(response_content, end="", flush=True)
-#             yield response_content
-#             full_response += response_content  # 응답을 누적
-            
-#         # 새로운 대화 내용을 메모리에 저장
-#         memory.save_context({"human": user_input}, {"ai": full_response})
-#         print(memory.load_memory_variables({}))
-#     return StreamingResponse(stream_response(), media_type="text/plain")
-
-# async def stream_quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input):
-#     memory = get_memory(user_id, conversation_id)
-
-#     # 대화 히스토리를 가져옴
-#     history = memory.load_memory_variables({}).get("history", "")
-#     prompt_template = create_quiz_prompt_template(quiz_type, difficulty, history)
-#     prompt_text = prompt_template.format(input=user_input)
-    
-#     async def stream_response():
-#         full_response = ""
-#         async for chunk in bedrock_llm.astream(prompt_text):
-#             response_content = chunk.content
-#             print(response_content, end="", flush=True)
-#             yield response_content
-#             full_response += response_content  # 응답을 누적
-    
-#         # 새로운 대화 내용을 메모리에 저장
-#         memory.save_context({"human": user_input}, {"ai": full_response})
-#         print(memory.load_memory_variables({}))
-#     return StreamingResponse(stream_response(), media_type="text/plain")
-
-async def chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input, first):
+# 대화 API 엔드포인트
+@app.post("/chat")
+async def chat_endpoint(request: Request):
+    data = await request.json()
+    user_id = data.get('user_id')
+    conversation_id = data.get('conversation_id')
+    user_input = data.get('input', 'Can you ask me a question?')
+    difficulty = data.get('difficulty', 'Normal')
+    scenario = data.get('scenario', 'coffee')
+    first = data.get('first', 'True')
+    print("user_id: ", user_id)
     memory = get_memory(user_id, conversation_id)
-    
-    # 대화 히스토리를 가져옴
-    history = memory.load_memory_variables({}).get("history", "")
-    prompt_template = create_chat_prompt_template(difficulty, scenario, history, first)
-    prompt_text = prompt_template.format(input=user_input)
-    print("prompt_text: ", prompt_text)
-    response = bedrock_llm.invoke(prompt_text)
-    response_content = response.content # 응답만 추출
-    # 새로운 대화 내용을 메모리에 저장
-    # memory.save_context({"human": user_input}, {"ai": response_content})
-    print(memory.load_memory_variables({}))
+    prompt_template = create_chat_prompt_template(scenario, difficulty, first)
+    conversation = ConversationChain(llm=bedrock_llm, memory=memory, prompt=prompt_template, verbose=True)
+    print("conversation: ", conversation)
+    response_content = conversation.predict(input=user_input)
+    print(response_content)
     return JSONResponse(content={
         "content": response_content,
         "user_id": user_id,
         "conversation_id": conversation_id
     })
 
-async def quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input, first):
+# 퀴즈 API 엔드포인트
+@app.post("/quiz")
+async def quiz_endpoint(request: Request):
+    data = await request.json()
+    user_id = data.get('user_id')
+    conversation_id = data.get('conversation_id')
+    quiz_type = data.get('quiz_type', 'vocabulary')
+    difficulty = data.get('difficulty', 'Normal')
+    user_input = data.get('input', 'Please give me a quiz question.')
+    first = data.get('first', 'True')
     memory = get_memory(user_id, conversation_id)
-
-    # 대화 히스토리를 가져옴
-    history = memory.load_memory_variables({}).get("history", "")
-    prompt_template = create_quiz_prompt_template(quiz_type, difficulty, history, first)
-    prompt_text = prompt_template.format(input=user_input)
-    print("prompt_text: ", prompt_text)
-    response = bedrock_llm.invoke(prompt_text)
-    response_content = response.content
-    # 새로운 대화 내용을 메모리에 저장
-    memory.save_context({"human": user_input}, {"ai": response_content})
-    print(memory.load_memory_variables({}))
+    prompt_template = create_quiz_prompt_template(quiz_type, difficulty, first)
+    conversation = ConversationChain(llm=bedrock_llm, memory=memory, prompt=prompt_template, verbose=True)
+    print("conversation: ", conversation)
+    response_content = conversation.predict(input=user_input)
+    print(response_content)
     return JSONResponse(content={
         "content": response_content,
         "user_id": user_id,
         "conversation_id": conversation_id
     })
 
-async def save_conversation_to_s3(user_id, conversation_id, user_name):
+# 대화 평가 API 엔드포인트
+@app.post("/chat/evaluate")
+async def chat_evaluate_endpoint(request: Request):
+    data = await request.json()
+    user_id = data.get('user_id')
+    conversation_id = data.get('conversation_id')
+    # user_name = data.get('user_name')
     memory = get_memory(user_id, conversation_id)
-    s3_client = boto3.client('s3')
+    if not memory.chat_memory.messages:
+        return JSONResponse(content={"error": "No conversation history found"}, status_code=400)
+    messages = memory.chat_memory.messages
+    if messages and isinstance(messages[-1], AIMessage):
+        messages = messages[:-1]  # 마지막 메시지 제거
+    conversation_text = "\n".join(
+        f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
 
+
+        #for message in memory.chat_memory.messages
+        for message in messages
+    )
+
+
+    print("conversation_text: ", conversation_text)
+    chat_evaluation_prompt = f"""
+    You are an expert in evaluating language skills based on conversations. Below is a conversation between a user and an AI.
+    Please evaluate the user's language skills on a scale of 1 to 100 and provide detailed feedback on how they can improve.
+    Ensure your response is strictly in the following JSON format without any additional comments or text:
+
+    {{
+        "score": "<numeric_score>",
+        "feedback": "<feedback>"
+    }}
+
+    The response should be a valid JSON string only.
+    Conversation:
+    {conversation_text}
+    """
+
+    response = bedrock_llm.invoke(chat_evaluation_prompt)
+
+    # 응답이 유효한 JSON 형식인지 확인
+    try:
+        response_content = json.loads(response.content)
+    except json.JSONDecodeError as e:
+        print(f"JSONDecodeError: {str(e)} - Response content: {response.content}")
+        return JSONResponse(content={"error": "Invalid response from the LLM service"}, status_code=500)
+
+    delete_memory(user_id, conversation_id)
+
+    return JSONResponse(content={
+        "user_id": user_id,
+        "conversation_id": conversation_id,
+        "score": response_content.get("score"),
+        "feedback": response_content.get("feedback")
+    })
+
+# 퀴즈 평가 API 엔드포인트
+@app.post("/quiz/evaluate")
+async def quiz_evaluate_endpoint(request: Request):
+    data = await request.json()
+    user_id = data.get('user_id')
+    conversation_id = data.get('conversation_id')
+    # user_name = data.get('user_name')
+
+    memory = get_memory(user_id, conversation_id)
+
+    if not memory.chat_memory.messages:
+        return JSONResponse(content={"error": "No quiz history found"}, status_code=400)
+    messages = memory.chat_memory.messages
+
+    if messages and isinstance(messages[-1], AIMessage):
+        messages = messages[:-1]
+
+    conversation_text = "\n".join(
+        f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
+        #for message in memory.chat_memory.messages
+        for message in messages
+    )
+
+    print("conversation_text: ", conversation_text)
+    quiz_evaluation_prompt = f"""
+    You are an expert at evaluating quiz sessions. Below is a conversation that includes a quiz session.
+    Please evaluate the session by filling in the number of correct answers, total questions, and provide feedback.
+    Make sure to return the response strictly in a valid JSON format.
+
+    Conversation:
+    {conversation_text}
+
+    Please respond in the following JSON format:
+    {{
+        "correct_answers": "<number_of_correct_answers>",
+        "total_questions": "<total_number_of_questions>",
+        "feedback": "<your_feedback>"
+    }}
+
+    Remember, your response should be a valid JSON string, and do not include any extra information or comments outside the JSON.
+    """
+    response = bedrock_llm.invoke(quiz_evaluation_prompt)
+    delete_memory(user_id, conversation_id)
+    response_content = json.loads(response.content)
+    total_questions = int(response_content.get("total_questions"))
+    correct_answers = int(response_content.get("correct_answers"))
+    score = (correct_answers / total_questions) * 100
+    score = round(score, 1)
+    return JSONResponse(content={
+        "user_id": user_id,
+        "conversation_id": conversation_id,
+        "score": str(score),
+        "feedback": response_content.get("feedback")
+    })
+
+# 대화 저장 API 엔드포인트
+@app.post("/save")
+async def save_endpoint(request: Request):
+    data = await request.json()
+    user_id = data.get('user_id')
+    conversation_id = data.get('conversation_id')
+    user_name = data.get('user_name')
+
+    memory = get_memory(user_id, conversation_id)
+    s3_key = await save_conversation_to_s3(user_id, conversation_id, user_name, memory)
+
+    return JSONResponse(content={"message": "Conversation saved", "s3_key": s3_key})
+
+async def save_conversation_to_s3(user_id, conversation_id, user_name, memory):
     # 대화 내용을 텍스트 형식으로 변환
     conversation_text = "\n".join(
         f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
         for message in memory.chat_memory.messages
     )
-    
+
     # 파일 이름 생성
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     s3_key = f"{user_name}/conversation_{conversation_id}_{timestamp}.txt"
@@ -304,142 +371,6 @@ async def save_conversation_to_s3(user_id, conversation_id, user_name):
     )
 
     return s3_key
-
-# @app.post("/stream/chat")
-# async def stream_chat_endpoint(request: Request):
-#     data = await request.json()
-#     user_id = data.get('user_id')
-#     conversation_id = data.get('conversation_id')
-#     user_input = data.get('input', 'Can you ask me a question?')
-#     difficulty = data.get('difficulty', 'Normal')
-#     scenario = data.get('scenario', 'coffee')
-
-#     return await stream_chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input)
-
-# @app.post("/stream/quiz")
-# async def stream_quiz_endpoint(request: Request):
-#     data = await request.json()
-#     user_id = data.get('user_id')
-#     conversation_id = data.get('conversation_id')
-#     quiz_type = data.get('quiz_type', 'vocabulary')
-#     difficulty = data.get('difficulty', 'Normal')
-#     user_input = data.get('input', 'Please give me a quiz question.')
-
-#     return await stream_quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input)
-
-@app.post("/chat")
-async def chat_endpoint(request: Request):
-    data = await request.json()
-    user_id = data.get('user_id')
-    conversation_id = data.get('conversation_id')
-    user_input = data.get('input', 'Can you ask me a question?')
-    difficulty = data.get('difficulty', 'Normal')
-    scenario = data.get('scenario', 'coffee')
-    first = data.get('first', 'True')
-    return await chat_get_response_from_claude(user_id, conversation_id, difficulty, scenario, user_input, first)
-
-@app.post("/quiz")
-async def quiz_endpoint(request: Request):
-    data = await request.json()
-    user_id = data.get('user_id')
-    conversation_id = data.get('conversation_id')
-    quiz_type = data.get('quiz_type', 'vocabulary')
-    difficulty = data.get('difficulty', 'Normal')
-    user_input = data.get('input', 'Please give me a quiz question.')
-    first = data.get('first', 'True')
-    return await quiz_get_response_from_claude(user_id, conversation_id, quiz_type, difficulty, user_input, first)
-
-@app.post("/chat/evaluate")
-async def chat_evaluate_endpoint(request: Request):
-    data = await request.json()
-    user_id = data.get('user_id')
-    conversation_id = data.get('conversation_id')
-    # user_name = data.get('user_name')
-    memory = get_memory(user_id, conversation_id)
-
-    if not memory.chat_memory.messages:
-        return JSONResponse(content={"error": "No conversation history found"}, status_code=400)
-    
-    conversation_text = "\n".join(
-        f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
-        for message in memory.chat_memory.messages
-    )
-    
-    chat_evaluation_prompt = f"""
-    Here is the conversation:\n{conversation_text}\n
-    Please rate the user's language skills on a scale of 1 to 100 and provide feedback on how they can improve.
-    Respond in the following JSON format:
-    {{
-        "score": "<numeric_score>",
-        "feedback": "<feedback>"
-    }}
-    """
-    response = bedrock_llm.invoke(chat_evaluation_prompt)
-    delete_memory(user_id, conversation_id)
-    response_content=json.loads(response.content)
-    print(response_content)
-    return JSONResponse(content={
-        "user_id": user_id,
-        "conversation_id": conversation_id,
-        "score": response_content.get("score"),
-        "feedback": response_content.get("feedback")
-    })
-
-@app.post("/quiz/evaluate")
-async def quiz_evaluate_endpoint(request: Request):
-    data = await request.json()
-    user_id = data.get('user_id')
-    conversation_id = data.get('conversation_id')
-    # user_name = data.get('user_name')
-    memory = get_memory(user_id, conversation_id)
-
-    if not memory.chat_memory.messages:
-        return JSONResponse(content={"error": "No quiz history found"}, status_code=400)
-    
-    conversation_text = "\n".join(
-        f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
-        for message in memory.chat_memory.messages
-    )
-    quiz_evaluation_prompt=f"""
-    Here is the quiz session:\n{conversation_text}\n
-    Please fill in the "correct_answers" field with the number of correct answers the user provided, and the "total_questions" field with the total number of questions in the quiz. Additionally, provide feedback in the "feedback" field based on the user's performance.
-    Respond in the following JSON format:
-    {{
-        "correct_answers": "<number_of_correct_answers>",
-        "total_questions": "<total_number_of_questions>",
-        "feedback": "<your_feedback>"
-    }}
-    """
-    response = bedrock_llm.invoke(quiz_evaluation_prompt)
-    delete_memory(user_id, conversation_id)
-    print("response: ", response)
-    response_content = json.loads(response.content)
-    print("response_content: ", response_content)
-    total_questions = int(response_content.get("total_questions"))
-    correct_answers = int(response_content.get("correct_answers"))
-    score = (correct_answers/total_questions) * 100
-    score = round(score, 1) # 반올림
-    score = str(score)
-    return JSONResponse(content={
-        "user_id": user_id,
-        "conversation_id": conversation_id,
-        "score": score,
-        "feedback": response_content.get("feedback")
-    })
-    
-@app.post("/save")
-async def save_endpoint(request: Request):
-    data = await request.json()
-    user_id = data.get('user_id')
-    conversation_id = data.get('conversation_id')
-    user_name = data.get('user_name')
-
-    if not user_id or not conversation_id:
-        return JSONResponse(content={"error": "User ID and conversation ID are required"}, status_code=400)
-
-    s3_key = await save_conversation_to_s3(user_id, conversation_id, user_name)
-    
-    return JSONResponse(content={"message": "Conversation saved", "s3_key": s3_key})
 
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=5000)

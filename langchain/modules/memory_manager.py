@@ -9,10 +9,9 @@ class MemoryManager:
     def get_memory(self, user_id, conversation_id):
         api_endpoint = f"{settings.DB_URL}/chatmessage/allmessages"
         request_data = {
-            "memberId": user_id,            
-            "chatRoomId": conversation_id  
+            "memberId": user_id,
+            "chatRoomId": conversation_id
         }
-
         response = requests.post(api_endpoint, json=request_data)
         if response.status_code == 200:
             response_data = response.json()
@@ -30,11 +29,9 @@ class MemoryManager:
                     memory.chat_memory.add_ai_message(AIMessage(content=message_text))
                 elif message_text:
                     memory.chat_memory.add_user_message(HumanMessage(content=message_text))
-
+            print("memory: ", memory)
             return memory
         else:
-            print(f"Failed to retrieve messages. Status code: {response.status_code}")
-            print("Error:", response.text)
             return None
 
     def delete_memory(self, user_id, conversation_id):
