@@ -5,7 +5,6 @@ class Settings(BaseSettings):
     HOST: str = '0.0.0.0'
     PORT: int = 5000
     DB_URL: str
-    # S3_BUCKET_NAME: str
     AWS_REGION: str
 
     class Config:
