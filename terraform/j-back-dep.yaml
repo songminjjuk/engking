@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: j-backend-dep
+  labels:
+    app: j-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: j-backend
+  template:
+    metadata:
+      labels:
+        app: j-backend
+    spec:
+      containers:
+      - name: j-backend-container
+        image: 355627705292.dkr.ecr.ap-northeast-1.amazonaws.com/engking-dynamo:latest
+        ports:
+        - containerPort: 8080
