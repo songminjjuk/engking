@@ -35,11 +35,12 @@ pipeline {
                 gradle 'gradle-7.6'
             }
             steps {
-                script {
-                    // Ensure gradlew is executable
-                    sh 'chmod +x ./engking_backend_dynamoDB/gradlew'
-                    // Run the Gradle build
-                    sh './engking_backend_dynamoDB/gradlew clean bootJar'
+                dir('engking_backend_dynamoDB') {  // Navigate to the project directory
+                    script {
+                        // Ensure gradlew is executable and run the build
+                        sh 'chmod +x ./gradlew'
+                        sh './gradlew clean bootJar'
+                    }
                 }
             }
             post {
