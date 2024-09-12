@@ -37,6 +37,7 @@ pipeline {
             steps {
                 script {
                     // Ensure gradlew is executable
+                    sh 'cd /var/lib/jenkins/workspace/dynamo/engking_backend_dynamoDB'
                     sh 'chmod +x gradlew'
                     // Run the Gradle build
                     sh './gradlew clean bootJar'
