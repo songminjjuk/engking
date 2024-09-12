@@ -1,0 +1,119 @@
+pipeline {
+    agent any
+    environment {
+        GITNAME = 'hansubbbb'
+        GITEMAIL = 'hansubin0039@gmail.com'
+        GITWEBADD = 'https://github.com/acs5-4/engking.git'
+        GITSSHADD = 'git@github.com:acs5-4/engking.git'
+
+        AWS_CREDENTIAL_NAME = 'aws_cre'
+        ECR_PATH = '355627705292.dkr.ecr.ap-northeast-1.amazonaws.com'
+        IMAGE_NAME = '355627705292.dkr.ecr.ap-northeast-1.amazonaws.com/engking-dynamo'
+        REGION = 'ap-northeast-1'
+
+        GITCREDENTIAL = 'git_cre'
+        DOCKERHUBCREDENTIAL = 'docker_cre'
+    }
+    stages {
+        stage('Checkout Github') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/backend-dynamoDB']], 
+                    userRemoteConfigs: [[credentialsId: GITCREDENTIAL, url: GITWEBADD]]
+                ])
+            }
+            post {
+                failure {
+                    sh "echo clone failed"
+                }
+                success {
+                    sh "echo clone success"
+                }
+            }
+        }
+        // stage('Build with Gradle') {
+        //     tools {
+        //         gradle 'gradle-8.8'
+        //     }
+        //     steps {
+        //         dir('engking_backend_dynamoDB') {  // Navigate to the project directory
+        //             script {
+        //                 // Ensure gradlew is executable and run the build
+        //                 sh 'chmod +x ./gradlew'
+        //                 sh './gradlew clean bootJar'
+        //             }
+        //         }
+        //     }
+        //     post {
+        //         failure {
+        //             sh "echo Gradle build failed"
+        //         }
+        //         success {
+        //             sh "echo Gradle build success"
+        //         }
+        //     }
+        // }
+        stage('Docker Image Build') {
+            steps {
+                script {
+                    def dockerfilePath = 'engking_backend_dynamoDB/Dockerfile'
+                    def contextPath = 'engking_backend_dynamoDB'
+                    sh "docker build -t ${IMAGE_NAME}:${currentBuild.number} -f ${dockerfilePath} ${contextPath}"
+                    sh "docker build -t ${IMAGE_NAME}:latest -f ${dockerfilePath} ${contextPath}"
+                }
+            }
+            post {
+                failure {
+                    sh "echo image build failed"
+                }
+                success {
+                    sh "echo image build success"
+                }
+            }
+        }
+        stage('Docker Image Push') {
+            steps {
+                script {
+                    // Cleanup Docker credentials
+                    sh 'rm -f ~/.dockercfg ~/.docker/config.json || true'
+                    
+                    // Push Docker images to ECR
+                    docker.withRegistry("https://${ECR_PATH}", "ecr:${REGION}:${AWS_CREDENTIAL_NAME}") {
+                        docker.image("${IMAGE_NAME}:${currentBuild.number}").push()
+                        docker.image("${IMAGE_NAME}:latest").push()
+                    }
+                }
+            }
+            post {
+                failure {
+                    sh "docker image rm -f ${IMAGE_NAME}:${currentBuild.number}"
+                    sh "docker image rm -f ${IMAGE_NAME}:latest"
+                    sh "echo push failed"
+                }
+                success {
+                    sh "docker image rm -f ${IMAGE_NAME}:${currentBuild.number}"
+                    sh "docker image rm -f ${IMAGE_NAME}:latest"
+                    sh "echo push success"
+                }
+            }
+        }
+        // Uncomment if needed for manifest updates
+        // stage('EKS manifest file update') {
+        //     steps {
+        //         git credentialsId: GITCREDENTIAL, url: GITSSHADD, branch: 'main'
+        //         sh "git config --global user.email ${GITEMAIL}"
+        //         sh "git config --global user.name ${GITNAME}"
+        //         sh "git add ."
+        //         sh "git commit -m 'fixed tag ${currentBuild.number}'"
+        //         sh "git push origin main"
+        //     }
+        //     post {
+        //         failure {
+        //             sh "echo manifest update failed"
+        //         }
+        //         success {
+        //             sh "echo manifest update success"
+        //         }
+        //     }
+        // }
+    }
+}
