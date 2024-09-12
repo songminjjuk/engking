@@ -30,6 +30,20 @@ pipeline {
                 }
             }
         }
+        // Gradle Build Stage
+        stage('Build with Gradle') {
+            steps {
+                sh "./gradlew clean bootJar"  // Gradle을 통해 Spring Boot 프로젝트 빌드
+            }
+            post {
+                failure {
+                    sh "echo Gradle build failed"
+                }
+                success {
+                    sh "echo Gradle build success"
+                }
+            }
+        }
         stage('docker image build') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${currentBuild.number} -f engking_backend_dynamoDB/Dockerfile engking_backend_dynamoDB/"
