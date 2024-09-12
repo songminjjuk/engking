@@ -32,6 +32,9 @@ pipeline {
         }
         // Gradle Build Stage
         stage('Build with Gradle') {
+            tools {
+                gradle 'gradle-7.6'
+            }
             steps {
                 sh "./gradlew clean bootJar"  // Gradle을 통해 Spring Boot 프로젝트 빌드
             }
