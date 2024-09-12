@@ -32,7 +32,7 @@ pipeline {
         }
         stage('Build with Gradle') {
             tools {
-                gradle 'gradle-7.6'
+                gradle 'gradle-8.8'
             }
             steps {
                 dir('engking_backend_dynamoDB') {  // Navigate to the project directory
