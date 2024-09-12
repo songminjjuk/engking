@@ -8,7 +8,7 @@ pipeline {
 
         AWS_CREDENTIAL_NAME = 'aws_cre'
         ECR_PATH = '355627705292.dkr.ecr.ap-northeast-1.amazonaws.com'
-        IMAGE_NAME = '355627705292.dkr.ecr.ap-northeast-1.amazonaws.com/member'
+        IMAGE_NAME = '355627705292.dkr.ecr.ap-northeast-1.amazonaws.com/engking-member'
         REGION = 'ap-northeast-1'
 
         GITCREDENTIAL = 'git_cre'
