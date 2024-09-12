@@ -37,7 +37,6 @@ pipeline {
             steps {
                 script {
                     // Ensure gradlew is executable
-                    def contextPath = 'engking_backend_dynamoDB'
                     sh 'ls -al'
                     sh 'chmod +x gradlew'
                     // Run the Gradle build
