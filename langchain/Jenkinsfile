@@ -19,7 +19,6 @@ pipeline {
             steps {
                 checkout([$class: 'GitSCM', branches: [[name: '*/langchain']], extensions: [],
                 userRemoteConfigs: [[credentialsId: GITCREDENTIAL, url: GITWEBADD]]])
-
             }
             post {
                 failure {
@@ -30,7 +29,7 @@ pipeline {
                 }
             }
         }
-        stage('docker image build') {
+        stage('Docker Image Build') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${currentBuild.number} -f langchain/Dockerfile langchain/"
                 sh "docker build -t ${IMAGE_NAME}:latest -f langchain/Dockerfile langchain/"
@@ -44,18 +43,17 @@ pipeline {
                 }
             }
         }
-        stage('docker image push') {
+        stage('Docker Image Push') {
             steps {
-                script{
-                    // cleanup current user docker credentials
-                    sh 'rm -f ~/.dockercfg ~/.docker/config.json || true'
+                script {
+                    // Authenticate with ECR using AWS CLI
+                    sh 'aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_PATH}'
                     
-                   
-                    docker.withRegistry("https://${ECR_PATH}", "ecr:${REGION}:${AWS_CREDENTIAL_NAME}") {
-                      docker.image("${IMAGE_NAME}:${BUILD_NUMBER}").push()
-                      docker.image("${IMAGE_NAME}:latest").push()
+                    // Push images to ECR
+                    docker.withRegistry("https://${ECR_PATH}") {
+                        docker.image("${IMAGE_NAME}:${BUILD_NUMBER}").push()
+                        docker.image("${IMAGE_NAME}:latest").push()
                     }
-
                 }
             }
             post {
@@ -71,29 +69,5 @@ pipeline {
                 }
             }
         }
-        // stage('EKS manifest file update') {
-        //     steps {
-        //         git credentialsId: GITCREDENTIAL, url: GITSSHADD, branch: 'main'
-        //         sh "git config --global user.email ${GITEMAIL}"
-        //         sh "git config --global user.name ${GITNAME}"
-
-        //         sh "git add ."
-        //         sh "git branch -M main"
-        //         sh "git commit -m 'fixed tag ${currentBuild.number}'"
-        //         sh "git remote remove origin"
-        //         sh "git remote add origin ${GITSSHADD}"
-        //         sh "git push origin main"
-        //     }
-        //     post {
-        //         failure {
-        //             sh "echo manifest update failed"
-        //         }
-        //         success {
-        //             sh "echo manifest update success"
-        //         }
-        //     }
-        // }
-       
-
     }
 }
