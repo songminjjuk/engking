@@ -17,7 +17,7 @@ pipeline {
     stages {
         stage('Checkout Github') {
             steps {
-                checkout([$class: 'GitSCM', branches: [[name: '*/engking_backend_dynamoDB']], extensions: [],
+                checkout([$class: 'GitSCM', branches: [[name: '*/backend_dynamoDB']], extensions: [],
                 userRemoteConfigs: [[credentialsId: GITCREDENTIAL, url: GITWEBADD]]])
 
             }
