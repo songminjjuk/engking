@@ -39,9 +39,9 @@ pipeline {
                     // Ensure gradlew is executable
                     sh 'cd engking_backend_dynamoDB'
                     sh 'ls -al'
-                    sh 'chmod +x gradlew'
+                    sh 'chmod +x engking_backend_dynamoDB/gradlew'
                     // Run the Gradle build
-                    sh './gradlew clean bootJar'
+                    sh './engking_backend_dynamoDB/gradlew clean bootJar'
                 }
             }
             post {
