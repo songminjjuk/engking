@@ -41,6 +41,11 @@ for filename in os.listdir(routers_dir):
         module = importlib.import_module(module_name)
         app.include_router(module.router)
 
+# 헬스체크 엔드포인트 추가
+@app.get("/healthz")
+async def health_check():
+    return {"status": "ok"}
+
 # 전역 예외 핸들러
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):

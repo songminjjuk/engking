@@ -5,8 +5,9 @@ import json
 import boto3
 from app.modules.common import generate_unique_filename
 
+b3_url = os.getenv('B3_URL')
+
 def get_next_question(member_id: str, chat_room_id: str, message_id: str, message_text: str, topic: str, difficulty: str):
-    b3_url = os.getenv('B3_URL')
 
     # 요청 본문 생성
     request_body = {
@@ -32,7 +33,7 @@ def get_next_question(member_id: str, chat_room_id: str, message_id: str, messag
 
             return {
                 "success": response_data.get("success"),
-                "nextQuestion": response_data.get("nextQuestion", "Temporary question"),
+                "nextQuestion": response_data.get("nextQuestion", "Can you say that again?"),
                 "chatRoomId": response_data.get("chatRoomId"),
                 "memberId": response_data.get("memberId"),
                 "messageId": response_data.get("messageId"),

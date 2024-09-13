@@ -3,9 +3,9 @@ import os
 import requests
 import json
 
-def get_end_question(member_id, chat_room_id, message_id):
-    b3_url = os.getenv('B3_URL')
+b3_url = os.getenv('B3_URL')
 
+def get_end_question(member_id, chat_room_id, message_id):
     # 요청 본문 생성
     request_body = {
         "memberId": member_id,

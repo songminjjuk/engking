@@ -1,25 +1,13 @@
-import boto3
 import os
 from botocore.exceptions import NoCredentialsError, ClientError
 from typing import Literal
-from botocore.config import Config
+from app.modules.common import get_boto3_client
 
-# AWS 인증 정보 설정
-aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 bucket_name = os.getenv('BUCKET_NAME')
 region_name = os.getenv('REGION_NAME')
 
-s3_client = boto3.client(
-    's3',
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-    # endpoint_url=f'https://{bucket_name}.s3.{region_name}.amazonaws.com',
-    #config=Config(signature_version='s3v4'),
-    region_name=region_name
-)
-# ep = s3_client.meta.endpoint_url
-# print("ep: ",ep)
+# S3 클라이언트 생성
+s3_client = get_boto3_client('s3')
 
 def get_full_path(filename: str) -> str:
     return f"audio/{filename}"
@@ -51,10 +39,6 @@ def generate_presigned_url(filename: str, operation: Literal['put_object', 'get_
             ExpiresIn=3600
         )
         return response
-
-        modified_url = f'https://{bucket_name}.s3.{region_name}.amazonaws.com/{full_path}?{response.split("?")[1]}'.replace(f'{bucket_name}/', "")
-        print(modified_url)
-        return modified_url
     except NoCredentialsError:
         print("AWS 자격 증명이 잘못되었습니다.")
         return None
@@ -68,10 +52,6 @@ def generate_presigned_url(filename: str, operation: Literal['put_object', 'get_
 def save_audio_to_s3(filename: str, audio_content: bytes):
     try:
         full_path = get_full_path(filename)
-
-        # if check_if_object_exists(bucket_name, filename):
-        #     print(f"객체 '{full_path}'가 이미 존재합니다. presigned URL을 반환합니다.")
-        #     return generate_presigned_url(filename, 'get_object')
 
         # S3에 파일 저장
         s3_client.put_object(

@@ -81,7 +81,7 @@ echo "5. Uploading audio file to presigned URL..."
 cp sh/audio.mp3 temp_audio.mp3  # 로컬에서 sh/audio.mp3 파일 복제
 
 # 파일을 업로드합니다.
-python3 sh/put.py $presignedUrl temp_audio.mp3
+python sh/put.py $presignedUrl temp_audio.mp3
 
 # Clean up temporary files
 rm temp_audio.mp3
