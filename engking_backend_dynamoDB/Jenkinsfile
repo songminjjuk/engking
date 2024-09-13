@@ -30,28 +30,6 @@ pipeline {
                 }
             }
         }
-        // stage('Build with Gradle') {
-        //     tools {
-        //         gradle 'gradle-8.8'
-        //     }
-        //     steps {
-        //         dir('engking_backend_dynamoDB') {  // Navigate to the project directory
-        //             script {
-        //                 // Ensure gradlew is executable and run the build
-        //                 sh 'chmod +x ./gradlew'
-        //                 sh './gradlew clean bootJar'
-        //             }
-        //         }
-        //     }
-        //     post {
-        //         failure {
-        //             sh "echo Gradle build failed"
-        //         }
-        //         success {
-        //             sh "echo Gradle build success"
-        //         }
-        //     }
-        // }
         stage('Docker Image Build') {
             steps {
                 script {
