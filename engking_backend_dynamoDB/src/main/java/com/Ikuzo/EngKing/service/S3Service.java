@@ -26,7 +26,7 @@ public class S3Service {
     // 음성 파일에 대한 pre-signed url 생성
     public String generatePreSignedUrl(String memberId, String chatRoomId, String messageId) {
         // 객체의 키 경로 생성
-        String bucketName = "engking-voice-bucket";
+        String bucketName = "engking-audio-bucket";
         String objectKey = String.format("audio/%s/%s/%s.mp3", memberId, chatRoomId, messageId);
 
         // 객체 존재 여부 확인
