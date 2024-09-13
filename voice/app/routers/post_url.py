@@ -12,8 +12,7 @@ class FilenameRequest(BaseModel):
 async def create_post_url(request: FilenameRequest):
     if not request.filename:
         raise HTTPException(status_code=400, detail="파일명이 필요합니다.")
-    
-    # Specify your S3 bucket name here
+
     presigned_post = generate_presigned_post(request.filename)
 
     if not presigned_post:

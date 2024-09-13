@@ -3,8 +3,9 @@ import os
 import requests
 import json
 
+b3_url = os.getenv('B3_URL')
+
 def get_first_question(member_id, topic, difficulty):
-    b3_url = os.getenv('B3_URL')
 
     # Create request body
     request_body = {

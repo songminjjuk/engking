@@ -28,15 +28,13 @@ class FeedbackResponse(BaseModel):
     messageId: str
     score: str
     feedback: str
-    audioUrl: str  # audioUrl 필드 추가
+    audioUrl: str
 
 @router.post("/api/feedback/", response_model=FeedbackResponse)
 async def handle_feedback(request: FeedbackRequest):
 
     # 종료 질문 가져오기
     end_question_response = get_end_question(request.memberId, request.chatRoomId, request.messageId)
-    # if not end_question_response['success']:
-    #     raise HTTPException(status_code=500, detail="종료 질문을 가져오는 중 오류 발생.")
 
     # 피드백 처리 로직
     try:
