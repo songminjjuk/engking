@@ -192,10 +192,13 @@ app = FastAPI()
 app.include_router(chat_routes.router)
 app.include_router(quiz_routes.router)
 app.include_router(evaluate_routes.router)
-@app.get("/health")
+@app.get("/healthz")
 async def health_check():
     return {"status": "ok"}
 @app.get("/")
+async def health_check():
+    return {"status": "ok"}
+@app.get("/health")
 async def health_check():
     return {"status": "ok"}
 if __name__ == '__main__':
