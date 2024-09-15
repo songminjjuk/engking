@@ -42,7 +42,7 @@ for filename in os.listdir(routers_dir):
         app.include_router(module.router)
 
 # 헬스체크 엔드포인트 추가
-@app.get("/healthz")
+@app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
