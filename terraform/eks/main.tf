@@ -1,3 +1,77 @@
+# 1. NodeGroup의 인바운드/아웃바운드 규칙을 All Traffic으로 설정
+#############################
+# medium node group에 대한 보안 그룹 생성
+# resource "aws_security_group" "medium_nodegroup_sg" {
+#   name        = "medium-nodegroup-sg"
+#   description = "Security group for medium node group"
+#   vpc_id      = var.eks-vpc-id
+# }
+
+# # large node group에 대한 보안 그룹 생성
+# resource "aws_security_group" "large_nodegroup_sg" {
+#   name        = "large-nodegroup-sg"
+#   description = "Security group for large node group"
+#   vpc_id      = var.eks-vpc-id
+# }
+
+# # medium node group에 대한 모든 트래픽 허용 규칙 설정
+# resource "aws_security_group_rule" "allow_all_traffic_inbound_medium" {
+#   type        = "ingress"
+#   from_port   = 0
+#   to_port     = 65535
+#   protocol    = "-1"
+#   cidr_blocks = ["0.0.0.0/0"]
+#   security_group_id = aws_security_group.medium_nodegroup_sg.id
+# }
+
+# resource "aws_security_group_rule" "allow_all_traffic_outbound_medium" {
+#   type        = "egress"
+#   from_port   = 0
+#   to_port     = 65535
+#   protocol    = "-1"
+#   cidr_blocks = ["0.0.0.0/0"]
+#   security_group_id = aws_security_group.medium_nodegroup_sg.id
+# }
+
+# # large node group에 대한 모든 트래픽 허용 규칙 설정
+# resource "aws_security_group_rule" "allow_all_traffic_inbound_large" {
+#   type        = "ingress"
+#   from_port   = 0
+#   to_port     = 65535
+#   protocol    = "-1"
+#   cidr_blocks = ["0.0.0.0/0"]
+#   security_group_id = aws_security_group.large_nodegroup_sg.id
+# }
+
+# resource "aws_security_group_rule" "allow_all_traffic_outbound_large" {
+#   type        = "egress"
+#   from_port   = 0
+#   to_port     = 65535
+#   protocol    = "-1"
+#   cidr_blocks = ["0.0.0.0/0"]
+#   security_group_id = aws_security_group.large_nodegroup_sg.id
+# }
+# resource "aws_iam_role" "eks_role" {
+#   name = "eks-nodegroup-role"
+#   assume_role_policy = data.aws_iam_policy_document.eks_assume_role_policy.json
+# }
+
+# resource "aws_iam_role_policy_attachment" "eks_admin_access" {
+#   role       = aws_iam_role.eks_role.name
+#   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+# }
+
+
+# data "aws_iam_policy_document" "eks_assume_role_policy" {
+#   statement {
+#     actions = ["sts:AssumeRole"]
+#     principals {
+#       type        = "Service"
+#       identifiers = ["ec2.amazonaws.com"]
+#     }
+#   }
+# }
+#############################
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "18.26.6"
@@ -13,16 +87,33 @@ module "eks" {
   ]
 
   eks_managed_node_groups = {
-    pri-cluster-nodegroups = {
-        min_size = 2
+    medium = {
+        min_size = 1
         max_size = 8
-        desired_size = 2
-        instance_types = ["t3a.small"]
-
+        desired_size = 1
+        instance_types = ["t3a.medium"]
+        ###
+        # iam_role_arn  = aws_iam_role.eks_role.arn # 연결된 IAM 역할
+        # security_groups = [aws_security_group.medium_nodegroup_sg.id] # large node group에 보안 그룹 적용
+    }
+    large = {
+        min_size = 1
+        max_size = 2
+        desired_size = 1
+        instance_types = ["t3a.large"]
+        ###
+        # iam_role_arn  = aws_iam_role.eks_role.arn # 연결된 IAM 역할
+        # security_groups = [aws_security_group.large_nodegroup_sg.id] # large node group에 보안 그룹 적용
+        labels = {
+          "node" = "large" # 레이블 추가
+        }
     }
   }
   cluster_endpoint_private_access = true
 }
+# 2. Large Nodegroup 및 Medium Nodegroup에 AdministratorAccess 역할을 추가
+#########################################
+
 
 # #svc 생성을 위한 webhook 포트(9443) 추가
 resource "aws_security_group_rule" "allow_9443" {
@@ -259,16 +350,16 @@ resource "helm_release" "secrets-provider-aws" {
 resource "kubernetes_ingress_v1" "alb" {
 
   metadata {
-    name = "fast-ingress"
+    name = "alb-ingress"
     namespace = "default"
     
 
     annotations = {
-      "alb.ingress.kubernetes.io/load-balancer-name" = "fast-alb"
+      "alb.ingress.kubernetes.io/load-balancer-name" = "app-alb"
       "alb.ingress.kubernetes.io/scheme" = "internet-facing"
       "alb.ingress.kubernetes.io/target-type" = "ip"
-      "alb.ingress.kubernetes.io/group.name" = "min-alb-group"
-      # "alb.ingress.kubernetes.io/healthcheck-path" = "/api/health"
+      "alb.ingress.kubernetes.io/group.name" = "engking-backends"
+      "alb.ingress.kubernetes.io/healthcheck-path" = "/healthz"
     }
   }
   spec {
@@ -278,37 +369,49 @@ resource "kubernetes_ingress_v1" "alb" {
         path {
           backend {
             service {
-              name = "svc-front"
-              port {
-                number = 3000
-              }
-            }
-          }
-          path = "/front"
-          path_type = "Prefix"
-        }
-        path {
-          backend {
-            service {
-              name = "svc-back"
+              name = "j-back-service"
               port {
                 number = 8080
               }
             }
           }
-          path = "/back"
+          path = "/j-back"
           path_type = "Prefix"
         }
         path {
           backend {
             service {
-              name = "svc-langchain"
+              name = "s-back-service"
+              port {
+                number = 8080
+              }
+            }
+          }
+          path = "/s-back"
+          path_type = "Prefix"
+        }
+        path {
+          backend {
+            service {
+              name = "n-back-service"
               port {
                 number = 5000
               }
             }
           }
-          path = "/langchain"
+          path = "/n-back"
+          path_type = "Prefix"
+        }
+        path {
+          backend {
+            service {
+              name = "langchain-service"
+              port {
+                number = 5000
+              }
+            }
+          }
+          path = "/"
           path_type = "Prefix"
         }
       }
