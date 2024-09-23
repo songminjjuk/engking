@@ -77,7 +77,7 @@ pipeline {
                 sh "git config --global user.email ${GITEMAIL}"
                 sh "git config --global user.name ${GITNAME}"
                 sh "sed -i 's@${IMAGE_NAME}:.*@${IMAGE_NAME}:${currentBuild.number}@g' voice/n-back-dep.yaml"
-
+                sh "git pull --rebase origin main"
                 sh "git add ."
                 sh "git branch -M main"
                 sh "git commit -m 'fixed tag ${currentBuild.number}'"
