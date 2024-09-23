@@ -35,7 +35,7 @@ def generate_presigned_url(filename: str, operation: Literal['put_object', 'get_
         response = s3_client.generate_presigned_url(
             ClientMethod=operation,
             Params=params,
-            HttpMethod=httpMethod,
+#            HttpMethod=httpMethod,
             ExpiresIn=3600
         )
         return response
