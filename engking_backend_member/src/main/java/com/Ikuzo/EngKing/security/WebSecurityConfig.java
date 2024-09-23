@@ -16,7 +16,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @RequiredArgsConstructor
 @Configuration
-@EnableWebSecurity(debug=true)
+@EnableWebSecurity //debug 제거
 @Component
 public class WebSecurityConfig {
 
@@ -42,6 +42,7 @@ public class WebSecurityConfig {
 
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         // 경로에 대해 인증 없이 접근을 허용
+                .requestMatchers("/**").permitAll() //(추가) 어떤 패스로 오든 허용
                 //.requestMatchers("/member/**", "/swagger-ui/**", "/v3/api-docs/**","/health/**").permitAll() // 어떤 패스로 들어올 때 접근을 허용해줄건지
                 //.antMatchers("/member/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll() // 어떤 패스로 들어올 때 접근을 허용해줄건지
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
