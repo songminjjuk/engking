@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@RequestMapping("/quiz")    
+@RequestMapping("/quiz")
 public class QuizController {
 
     private final QuizService quizService;
