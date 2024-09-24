@@ -19,7 +19,7 @@ import java.util.*;
 @Slf4j
 @RestController //JSON 형식 반환
 @RequiredArgsConstructor //final, @NonNull 에 대한 생성자 자동생성
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*")
 @RequestMapping("/member")
 public class MemberController {
     private final MemberService memberService;
