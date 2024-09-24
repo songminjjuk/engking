@@ -25,7 +25,7 @@ public class MemberController {
     private final S3Service s3Service;
     private final String bucketName="engking-bucket-image";
 
-
+    @CrossOrigin(origins = "https://www.engking.site")
     @PostMapping("/register")
     public ResponseEntity<Member> registerMember(@RequestBody MemberRequestDto memberRequestDto) throws Exception {
 
