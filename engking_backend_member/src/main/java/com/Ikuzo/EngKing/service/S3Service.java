@@ -67,6 +67,7 @@ public class S3Service {
             PutObjectRequest objectRequest= PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(keyName)
+                    .contentType("image/jpg")
                     //.metadata(metadata)
                     .build();
 
