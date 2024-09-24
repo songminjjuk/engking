@@ -1,6 +1,5 @@
 import os
 from botocore.exceptions import NoCredentialsError, ClientError
-from botocore.client import Config  # Config 객체 가져오기
 from typing import Literal
 from app.modules.common import get_boto3_client
 
@@ -8,7 +7,7 @@ bucket_name = os.getenv('BUCKET_NAME')
 region_name = os.getenv('REGION_NAME')
 
 # S3 클라이언트 생성
-s3_client = get_boto3_client('s3', config=Config(signature_version='s3v4', region_name=region_name))
+s3_client = get_boto3_client('s3')
 
 def get_full_path(filename: str) -> str:
     return f"audio/{filename}"
