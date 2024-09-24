@@ -22,7 +22,7 @@ import QuizTitle from './components/QuizTitlePage';
 import ConvResultPage from './components/ConvResultPage';
 import QuizResultPage from './components/QuizResultPage';
 import PrivateRoute from './components/PrivateRoute';
-
+import TestPage from './components/test';
 import './assets/css/reset.css';
 import './assets/css/style.css';
 
@@ -82,7 +82,7 @@ const App = () => {
           <Route path="/quiztitle" element={<QuizTitle />} />
           <Route path="/quizresult" element={<QuizResultPage />} />
           <Route path="/convresult" element={<ConvResultPage />} />
-
+          <Route path="/test" element={<TestPage />} />
           {/* Protected routes */}
           <Route 
             path="/about" 

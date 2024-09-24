@@ -19,7 +19,7 @@ function MyPage() {
   const fetchMemberData = async () => {
     try {
       if (email) {
-        const response = await axios.post(`http://35.72.9.14:8080/member/info?email=${email}`);
+        const response = await axios.post(`https://sback.engking.site/member/info?email=${email}`);
   
         console.log('API Response:', response.data);
         setMemberData(response.data);
@@ -34,7 +34,7 @@ function MyPage() {
   const fetchConversationHistory = async () => {
     try {
       if (memberId) {
-        const response = await axios.post('http://13.115.48.150:8080/chatroom/chatroomlist', {
+        const response = await axios.post('https://jback.engking.site/chatroom/chatroomlist', {
           memberId: memberId
           
         });
@@ -53,7 +53,7 @@ function MyPage() {
   const fetchChatMessages = async (chatRoomId) => {
     try {
       if (memberId) {
-        const response = await axios.post('http://13.115.48.150:8080/chatmessage/allmessages', {
+        const response = await axios.post('https://jback.engking.site/chatmessage/allmessages', {
           memberId: memberId,
           chatRoomId: chatRoomId
         });
@@ -75,7 +75,7 @@ function MyPage() {
 
     try {
       if (memberId) {
-        const response = await axios.post('http://13.115.48.150:8080/chatroom/deletechatroom', {
+        const response = await axios.post('https://jback.engking.site/chatroom/deletechatroom', {
           memberId: memberId, 
           chatRoomId: chatRoomId
         });

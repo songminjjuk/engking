@@ -37,7 +37,7 @@ const QuizPage = () => {
 
     const fetchQuestions = async () => {
         try {
-            const response = await axios.post('http://13.115.48.150:8080/quiz/createquiz', {
+            const response = await axios.post('https://jback.engking.site/quiz/createquiz', {
                 memberId: userId,
                 quiz_type: title,
                 difficulty: difficulty
@@ -76,7 +76,7 @@ const QuizPage = () => {
 
     const fetchNextQuestion = async () => {
         try {
-            const response = await axios.post('http://13.115.48.150:8080/quiz/answer', {
+            const response = await axios.post('https://jback.engking.site/quiz/answer', {
                 memberId: userId,
                 chatRoomId: chatRoomId,
                 messageId: questions[currentQuestionIndex].messageId,
@@ -123,7 +123,7 @@ const QuizPage = () => {
 
     const handleSaveClick = async () => {
         try {
-            const response = await axios.post('http://13.115.48.150:8080/quiz/endquiz', {
+            const response = await axios.post('https://jback.engking.site/quiz/endquiz', {
                 chatRoomId: chatRoomId,
                 memberId: userId,
                 messageId: questions[currentQuestionIndex]?.messageId,

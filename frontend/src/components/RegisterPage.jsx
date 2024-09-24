@@ -38,7 +38,7 @@ const SignUp = () => {
   
     try {
       // 프록시 설정을 고려하여 상대 경로로 요청
-      const response = await axios.post('http://35.72.9.14:8080/member/register', {
+      const response = await axios.post('https://sback.engking.site/member/register', {
         email: formData.email,
         password: formData.password,
         name: formData.name,

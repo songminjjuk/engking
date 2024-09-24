@@ -22,7 +22,7 @@ function EditInfoPage() {
   
       const fetchUserData = async () => {
         try {
-          const response = await axios.post(`http://35.72.9.14:8080/member/info?email=${storedEmail}`);
+          const response = await axios.post(`https://sback.engking.site/member/info?email=${storedEmail}`);
   
           console.log('Response Data:', response.data);
   
@@ -60,14 +60,14 @@ function EditInfoPage() {
       }
   
       const data = {
-        id: 4, // Ensure this is a valid number
+        id: userId, // Ensure this is a valid number
         email: email,
         name: name,
         phone: number,
         birthday: birth,
       };
   
-      const response = await axios.patch('http://35.72.9.14:8080/member/update', data, {
+      const response = await axios.patch('https://sback.engking.site/member/update', data, {
         headers: {
           'Content-Type': 'application/json',
         }
@@ -80,7 +80,7 @@ function EditInfoPage() {
         if (profileImgUrl && imageFile) {
           await axios.put(profileImgUrl, imageFile, {
             headers: {
-              'Content-Type': 'image/jpeg'
+              'Content-Type': 'image/jpg'
             }
           });
           alert('Profile and image updated successfully!');
@@ -105,7 +105,7 @@ function EditInfoPage() {
           throw new Error('User ID is missing.');
         }
 
-        const response = await axios.delete('http://35.72.9.14:8080/member/delete', {
+        const response = await axios.delete('https://sback.engking.site/member/delete', {
           headers: {
             'Content-Type': 'application/json',
           },

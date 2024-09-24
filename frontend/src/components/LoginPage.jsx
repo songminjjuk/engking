@@ -29,7 +29,7 @@ const LoginPage = ({ reload, setReload }) => {
   
     try {
       // Make API request to the login endpoint
-      const response = await axios.post('http://35.72.9.14:8080/member/login', {
+      const response = await axios.post('https://sback.engking.site/member/login', {
         email: formData.email,
         password: formData.password,
       });
