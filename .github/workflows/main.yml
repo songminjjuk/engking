@@ -2,8 +2,7 @@ name: Trigger Jenkins Pipeline by Branch
 
 on:
   push:
-    branches:
-      - langchain
+    branches: [ langchain ]
     paths-ignore:
       - '.gitignore'
       - '.dockerignore'
