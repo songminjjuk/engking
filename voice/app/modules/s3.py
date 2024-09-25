@@ -17,8 +17,6 @@ def check_if_object_exists(bucket_name: str, filename: str) -> bool:
 
     try:
         s3_client.head_object(Bucket=bucket_name, Key=full_path)
-
-        # s3_client = boto3.client('s3', config=Config(signature_version='s3v4'), region_name, endpoint_url=('https://s3.' + region_name + '.amazonaws.com'))
         return True
     except ClientError as e:
         if e.response['Error']['Code'] == '404':
@@ -34,14 +32,14 @@ def generate_presigned_url(filename: str, operation: Literal['put_object', 'get_
         # presigned URL 생성
         params = {
             'Bucket': bucket_name,
-            'Key': full_path
-            # 'ContentType': 'audio/mpeg'  # Content-Type 지정
+            'Key': full_path,
+            # 'ContentType': 'audio/mpeg' # ContentType 추가
         }
 
         response = s3_client.generate_presigned_url(
             ClientMethod=operation,
             Params=params,
-           # HttpMethod=httpMethod,
+            HttpMethod=httpMethod,
             ExpiresIn=3600
         )
         return response
