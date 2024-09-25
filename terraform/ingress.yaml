@@ -1,46 +1,42 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: alb-ingress
   annotations:
-    alb.ingress.kubernetes.io/group.name: min-alb-group
-    alb.ingress.kubernetes.io/load-balancer-name: fast-alb
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/load-balancer-name: app-alb
     alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/group.name: engking-backends
     alb.ingress.kubernetes.io/target-type: ip
-  creationTimestamp: "2024-09-10T03:14:13Z"
-  finalizers:
-  - group.ingress.k8s.aws/min-alb-group
-  generation: 1
-  name: fast-ingress
-  namespace: default
-  resourceVersion: "1663"
-  uid: 29e03a9c-8584-4a7b-b9b1-5873c1675cf6
 spec:
-  ingressClassName: alb
   rules:
   - http:
       paths:
-      - backend:
-          service:
-            name: svc-front
-            port:
-              number: 3000
-        path: /front
+      - path: /j-back
         pathType: Prefix
-      - backend:
+        backend:
           service:
-            name: svc-back
+            name: j-back-service
             port:
               number: 8080
-        path: /back
+      - path: /s-back
         pathType: Prefix
-      - backend:
+        backend:
           service:
-            name: svc-langchain
+            name: s-back-service
+            port:
+              number: 8080
+      - path: /n-back
+        pathType: Prefix
+        backend:
+          service:
+            name: n-back-service
             port:
               number: 5000
-        path: /langchain
+      - path: /
         pathType: Prefix
-status:
-  loadBalancer:
-    ingress:
-    - hostname: fast-alb-1019974462.ap-northeast-1.elb.amazonaws.com
+        backend:
+          service:
+            name: langchain-service
+            port:
+              number: 5000
