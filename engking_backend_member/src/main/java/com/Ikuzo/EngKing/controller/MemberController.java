@@ -19,12 +19,12 @@ import java.util.*;
 @Slf4j
 @RestController //JSON 형식 반환
 @RequiredArgsConstructor //final, @NonNull 에 대한 생성자 자동생성
+@CrossOrigin(origins = "*")
 @RequestMapping("/member")
 public class MemberController {
     private final MemberService memberService;
     private final S3Service s3Service;
     private final String bucketName="engking-bucket-image";
-
 
     @PostMapping("/register")
     public ResponseEntity<Member> registerMember(@RequestBody MemberRequestDto memberRequestDto) throws Exception {

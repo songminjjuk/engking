@@ -111,7 +111,7 @@ public class MemberService {
         //memberRepository.save(member);  // save의 인자가 반환값
         String keyName=String.format("image/USER_ID_%s.PNG",id.toString());
         Map<String,String> metadata=new HashMap<>();
-        metadata.put("Content-Type","image/png");
+        metadata.put("Content-Type","image/jpg");
         String url=s3Service.createPresignedPutUrl(bucketName, keyName,metadata);
         memberRepository.save(member);
         return MemberResponseDto.getUrl(url);  //url 담은 responseDto 반환
