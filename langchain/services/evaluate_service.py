@@ -72,6 +72,10 @@ class EvaluateService:
     def evaluate_quiz(data):
         user_id = data.get('user_id')
         conversation_id = data.get('conversation_id')
+        quiz_type = data.get('quiz_type', 'vocabulary')
+        difficulty = data.get('difficulty', 'Normal')
+        user_input = data.get('input', 'Please give me a quiz question.')
+        first = data.get('first', False)
         memory = memory_manager.get_memory(user_id, conversation_id)
 
         if not memory.chat_memory.messages:
@@ -83,7 +87,7 @@ class EvaluateService:
             f"Human: {message.content}" if isinstance(message, HumanMessage) else f"AI: {message.content}\n"
             for message in messages
         )
-
+        # memory.chat_memory.add_user_message(HumanMessage(content=message_text))
         quiz_evaluation_prompt = f"""
         You are an expert at evaluating quiz sessions. Below is a conversation that includes a quiz session.
         Please evaluate the user's performance in answering the quiz questions. Calculate the score as a percentage based on the number of correct answers and total questions.
