@@ -30,7 +30,11 @@ def generate_presigned_url(filename: str, operation: Literal['put_object', 'get_
     
     try:
         # presigned URL 생성
-        params = {'Bucket': bucket_name, 'Key': full_path}
+        params = {
+            'Bucket': bucket_name,
+            'Key': full_path,
+            # 'ContentType': 'audio/mpeg' # ContentType 추가
+        }
 
         response = s3_client.generate_presigned_url(
             ClientMethod=operation,

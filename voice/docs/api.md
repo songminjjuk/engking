@@ -76,7 +76,7 @@
 
 ### Answer 및 Feedback 처리
 
-- URL: `/api/feedback`
+- URL: `/api/feedback/`
 - 메소드: POST
 - 요청 본문:
   ```json
@@ -118,28 +118,3 @@
       "success": false,
       "message": "서버에서 오류가 발생했습니다."
     }
-
-### 음성 저장 완료 알림 및 텍스트 변환
-
-- URL: `/api/transcription`
-- 메소드: POST
-- 요청 본문:
-  ```json
-  {
-    "memberId": "string",
-    "chatRoomId": "string",
-    "audioUrl": "string"
-  }
-  ```
-- 응답:
-  - 200 OK
-    ```json
-    {
-      "success": true,
-      "memberId": "string",
-      "responseText": "string",
-      "audioUrl": "string"
-   
-    }
-    ```
-    ``` 

@@ -8,11 +8,12 @@ router = APIRouter()
 BUCKET_NAME = os.getenv('BUCKET_NAME')
 
 @router.post("/api/upload/")
-async def upload_audio(file: UploadFile = File(...)):
+async def upload_audio(file: UploadFile = File(...), filename: str = None):
     if not file:
         raise HTTPException(status_code=400, detail="파일이 필요합니다.")
     
-    file_name = file.filename
+    # filename이 제공되지 않으면 기본 파일 이름 사용
+    file_name = filename if filename else file.filename
 
     # 파일 내용을 읽음
     file_content = await file.read()
