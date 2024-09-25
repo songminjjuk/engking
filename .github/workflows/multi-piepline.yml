@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - langchain
-      - backend_member
-      - backend-dynamoDB
-      - voice
     paths-ignore:
       - '.gitignore'
       - '.dockerignore'
