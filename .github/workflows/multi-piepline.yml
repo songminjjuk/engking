@@ -1,0 +1,42 @@
+name: Trigger Jenkins Pipeline by Branch
+
+on:
+  push:
+    branches:
+      - langchain
+      - backend_member
+      - backend-dynamoDB
+      - voice
+
+jobs:
+  trigger-jenkins:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set Jenkins Job based on Branch
+        id: set_job
+        run: |
+          # 브랜치 이름에 대응되는 Jenkins 파이프라인 이름 설정
+          if [ "${{ github.ref }}" == "refs/heads/langchain" ]; then
+            echo "JENKINS_JOB=langchain-pipeline" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" == "refs/heads/backend_member" ]; then
+            echo "JENKINS_JOB=backend_member-pipeline" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" == "refs/heads/backend-dynamoDB" ]; then
+            echo "JENKINS_JOB=backend-dynamoDB-pipeline" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" == "refs/heads/voice" ]; then
+            echo "JENKINS_JOB=voice-pipeline" >> $GITHUB_ENV
+          else
+            echo "This branch does not have a corresponding Jenkins job."
+            exit 1
+          fi
+
+      - name: Trigger Jenkins Job
+        uses: appleboy/jenkins-action@v0.0.2
+        with:
+          url: ${{ secrets.JENKINS_URL }}
+          user: ${{ secrets.JENKINS_USER }}
+          token: ${{ secrets.JENKINS_API_TOKEN }}
+          job: ${{ env.JENKINS_JOB }}
