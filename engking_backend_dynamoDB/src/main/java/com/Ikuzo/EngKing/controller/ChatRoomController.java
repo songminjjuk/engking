@@ -2,40 +2,40 @@ package com.Ikuzo.EngKing.controller;
 
 import com.Ikuzo.EngKing.dto.ChatRoomRequestDto;
 import com.Ikuzo.EngKing.dto.ChatRoomResponseDto;
-import com.Ikuzo.EngKing.entity.ChatRoom;
-import com.Ikuzo.EngKing.entity.ChatMessages;
 import com.Ikuzo.EngKing.service.ChatRoomService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+@Slf4j
 @RestController
-@RequestMapping("/api/chatroom")
+@RequiredArgsConstructor
+@RequestMapping("/chatroom")
 public class ChatRoomController {
 
-    @Autowired
-    private ChatRoomService chatRoomService;
+    private final ChatRoomService chatRoomService;
 
-    @PostMapping("/create")
-    public ResponseEntity<ChatRoomResponseDto> createChatRoom(@RequestBody ChatRoomRequestDto chatRoomRequestDto) {
+    @PostMapping("/chatroomlist")
+    public ResponseEntity<List<ChatRoomResponseDto>> selectChatRoomsByMemberId(@RequestBody ChatRoomRequestDto chatRoomRequestDto) {
         String memberId = chatRoomRequestDto.getMemberId();
-        String topic = chatRoomRequestDto.getTopic();
-        String difficulty = chatRoomRequestDto.getDifficulty();
 
-        ChatRoomResponseDto chatRoomResponseDto = chatRoomService.createChatRoom(memberId, topic, difficulty);
+        List<ChatRoomResponseDto> chatRoomResponseDtoLists = chatRoomService.selectChatRoomsByMemberId(memberId);
 
-        if (chatRoomResponseDto.isSuccess())
-            return ResponseEntity.status(HttpStatus.CREATED).body(chatRoomResponseDto);
-        else
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(chatRoomResponseDto);
+        return ResponseEntity.status(HttpStatus.OK).body(chatRoomResponseDtoLists);
     }
 
-    @PostMapping("/message/{chatRoomId}")
-    public ChatMessages addMessageToChatRoom(@PathVariable String chatRoomId, @RequestBody ChatMessages messages) {
-        return chatRoomService.addMessageToChatRoom(chatRoomId, messages);
+    @PostMapping("/deletechatroom")
+    public ResponseEntity<ChatRoomResponseDto> deleteChatRoomByChatRoomId(@RequestBody ChatRoomRequestDto chatRoomRequestDto) {
+        String memberId = chatRoomRequestDto.getMemberId();
+        String chatRoomId = chatRoomRequestDto.getChatRoomId();
+
+        ChatRoomResponseDto chatRoomResponseDto = chatRoomService.deleteChatRoomByChatRoomIdAndMemberId(memberId, chatRoomId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(chatRoomResponseDto);
     }
 
-
-    // 추가적인 엔드포인트 정의...
 }

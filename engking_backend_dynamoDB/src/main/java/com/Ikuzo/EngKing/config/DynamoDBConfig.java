@@ -13,7 +13,7 @@ public class DynamoDBConfig {
     @Bean
     public DynamoDbClient dynamoDbClient() {
         DynamoDbClientBuilder builder = DynamoDbClient.builder()
-                .region(Region.AP_NORTHEAST_2)  // 사용하려는 AWS 리전으로 설정
+                .region(Region.AP_NORTHEAST_1)  // 사용하려는 AWS 리전으로 설정
                 .credentialsProvider(DefaultCredentialsProvider.create());
 
         return builder.build();

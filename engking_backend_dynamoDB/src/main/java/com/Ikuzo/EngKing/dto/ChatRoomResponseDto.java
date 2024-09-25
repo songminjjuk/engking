@@ -1,5 +1,6 @@
 package com.Ikuzo.EngKing.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,14 +12,16 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL) // null인 필드는 JSON에서 제외
 public class ChatRoomResponseDto {
 
     private String chatRoomId;  // DynamoDB의 파티션 키
     private String memberId;    // DynamoDB의 정렬 키
     private String difficulty;
     private String topic;
+    private String quiz_type;
     private LocalDateTime createdTime;
-
-    private boolean success; // db 저장 됬는지
+    
+    private boolean queryResult; // CRUD 결과
 
 }

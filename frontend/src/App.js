@@ -28,14 +28,22 @@ import './assets/css/style.css';
 
 const App = () => {
   const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState('');
   const [reload, setReload] = useState(false);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('email');
+    const storedUserId = localStorage.getItem('userId');
     if (storedEmail) {
       setEmail(storedEmail);
     } else {
       setEmail('');
+    }
+
+    if (storedUserId) {
+      setUserId(storedUserId);
+    } else {
+      setUserId('');
     }
   }, [reload]);
 
