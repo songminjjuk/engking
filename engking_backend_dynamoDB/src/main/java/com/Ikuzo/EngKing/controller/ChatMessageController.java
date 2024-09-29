@@ -27,21 +27,27 @@ public class ChatMessageController {
         String memberId = chatMessageRequestDto.getMemberId();
         String chatRoomId = chatMessageRequestDto.getChatRoomId();
 
-        List<ChatMessageResponseDto> chatRoomResponseDtoLists = chatMessageService.selectChatMessagesByChatRoomId(chatRoomId);
+        try {
+            // 로그 기록 (요청 정보)
+            log.info("Request received: memberId={}, chatRoomId={}", memberId, chatRoomId);
+            List<ChatMessageResponseDto> chatRoomResponseDtoLists = chatMessageService.selectChatMessagesByChatRoomId(chatRoomId);
 
-        // 각 메시지에 대해 audioFileUrl을 생성하여 추가
-        for (ChatMessageResponseDto message : chatRoomResponseDtoLists) {
-            if (memberId != null && message.getMessageId() != null) {
-                // 프리사인드 URL 생성
-                String audioUrl = s3Service.generatePreSignedUrl(memberId, chatRoomId, message.getMessageId());
+            // 각 메시지에 대해 audioFileUrl을 생성하여 추가
+            for (ChatMessageResponseDto message : chatRoomResponseDtoLists) {
+                if (memberId != null && message.getMessageId() != null) {
+                    // 프리사인드 URL 생성
+                    String audioUrl = s3Service.generatePreSignedUrl(memberId, chatRoomId, message.getMessageId());
 
-                // audioFileUrl 설정
-                message.setAudioFileUrl(audioUrl);
+                    // audioFileUrl 설정
+                    message.setAudioFileUrl(audioUrl);
+                }
             }
+            log.info("Response successful: status=OK, chatRoomId={}, totalMessages={}", chatRoomId, chatRoomResponseDtoLists.size());
+            return ResponseEntity.status(HttpStatus.OK).body(chatRoomResponseDtoLists);
+
+        } catch (Exception e) {
+            log.error("Error processing request: memberId={}, chatRoomId={}, error={}", memberId, chatRoomId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        return ResponseEntity.status(HttpStatus.OK).body(chatRoomResponseDtoLists);
     }
-
-
 }
