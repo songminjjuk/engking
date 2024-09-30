@@ -1,11 +1,10 @@
 package com.Ikuzo.EngKing.service;
 
 import com.Ikuzo.EngKing.dto.ChatMessageResponseDto;
-import com.Ikuzo.EngKing.dto.LangchainMessageRequestDto;
-import com.Ikuzo.EngKing.dto.LangchainMessageResponseDto;
 import com.Ikuzo.EngKing.entity.ChatMessages;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
@@ -14,16 +13,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class ChatMessageService {
 
     private final DynamoDbClient dynamoDbClient;
-    private final RestTemplate restTemplate;
-
-    public ChatMessageService(DynamoDbClient dynamoDbClient, RestTemplate restTemplate) {
-        this.dynamoDbClient = dynamoDbClient;
-        this.restTemplate = restTemplate;
-    }
 
     public List<ChatMessageResponseDto> selectChatMessagesByChatRoomId(String chatRoomId) {
         // DynamoDB에서 ChatRoomId로 ChatMessages 조회
@@ -38,10 +33,12 @@ public class ChatMessageService {
                 .build();
 
         try {
+            log.info("Querying chat messages: chatRoomId={}", chatRoomId);
             QueryResponse queryResponse = dynamoDbClient.query(queryRequest);
             List<Map<String, AttributeValue>> items = queryResponse.items();
 
             if (items.isEmpty()) {
+                log.info("No messages found for chatRoomId={}", chatRoomId);
                 return new ArrayList<>();  // 조회된 항목이 없을 경우 빈 리스트 반환
             }
 
@@ -63,11 +60,11 @@ public class ChatMessageService {
 
                 responseDtos.add(responseDto);
             }
-
+            log.info("Successfully retrieved {} messages for chatRoomId={}", responseDtos.size(), chatRoomId);
             return responseDtos;
 
         } catch (Exception e) {
-            System.err.println("Failed to query chat messages by ChatRoomId: " + e.getMessage());
+            log.error("Failed to query chat messages: chatRoomId={}, error={}", chatRoomId, e.getMessage());
             return new ArrayList<>();
         }
     }

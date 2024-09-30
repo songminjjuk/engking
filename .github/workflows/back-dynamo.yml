@@ -1,0 +1,22 @@
+name: Trigger Jenkins BackdynamoPipeline by Branch
+
+on:
+  push:
+    branches:
+      - backend-dynamoDB
+
+jobs:
+  trigger-jenkins:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Trigger Jenkins Job
+        uses: appleboy/jenkins-action@v0.0.2
+        with:
+          url: ${{ secrets.JENKINS_URL }}
+          user: ${{ secrets.JENKINS_USER }}
+          token: ${{ secrets.JENKINS_API_TOKEN }}
+          job: "re-dynamo"
