@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@RequestMapping("/health")
+@RequestMapping("/status")
 public class HealthController {
 
     @GetMapping("")
