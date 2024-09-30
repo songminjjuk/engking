@@ -18,7 +18,7 @@ public class HealthController {
     @GetMapping("")
     public ResponseEntity<Void> healthCheck() {
         try {
-            log.info("Health check successful, returning status OK");
+//            log.info("Health check successful, returning status OK");
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("Error occurred during health check: {}", e.getMessage());
