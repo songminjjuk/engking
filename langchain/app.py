@@ -198,7 +198,7 @@ async def health_check():
 @app.get("/")
 async def health_check():
     return {"status": "ok"}
-@app.get("/health")
+@app.get("/status")
 async def health_check():
     return {"status": "ok"}
 if __name__ == '__main__':
