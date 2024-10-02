@@ -94,6 +94,7 @@ class EvaluateService:
         B) <Option 2>
         C) <Option 3>
         D) <Option 4>
+        
         Answer: <User Input> (for example: Answer: A) extracted)
 
         If the answer is correct:
