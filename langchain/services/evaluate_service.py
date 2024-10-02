@@ -86,23 +86,6 @@ class EvaluateService:
         )
         # memory.chat_memory.add_user_message(HumanMessage(content=message_text))
         quiz_evaluation_prompt = f"""
-        # You are an expert at evaluating quiz sessions. Below is a conversation that includes a quiz session.
-        # Please evaluate the user's performance in answering the quiz questions. Calculate the score as a percentage based on the number of correct answers and total questions.
-        # Additionally, provide feedback in Korean that focuses on the user's English skills, including grammar, vocabulary, and comprehension.
-
-        # Ensure your response is strictly in the following JSON format without any additional comments or text:
-
-        # {{
-        #     "score": "<percentage_score as string>",
-        #     "feedback": "<feedback in Korean with properly escaped newlines, e.g., \\n>"
-        # }}
-
-        # The response should be a valid JSON string only.
-        # Conversation:
-        # {conversation_text}
-
-        # Remember, your response should be a valid JSON string, and do not include any extra information or comments outside the JSON.
-        
         You are an expert at evaluating quiz sessions. Below is a conversation that includes a quiz session.
         Please evaluate the user's performance in answering each quiz question individually. For each question:
         1. Display the original question in the following format:
@@ -113,7 +96,7 @@ class EvaluateService:
         D) <Option 4>
         
         2. Display the user's answer in the format:
-        <User Input>
+        Answer: <User Input>
         
         3. Provide specific feedback on the user's answer (whether it is correct or incorrect) in the format:
         <Correct or Incorrect>
@@ -125,7 +108,7 @@ class EvaluateService:
 
         {{
             "score": "<percentage_score as a string, without the % symbol>",
-            "feedback": "<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n<User Input>\\n<Correct or Incorrect>\\n<Feedback in Korean>\\n<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n<User Input>\\n<Correct or Incorrect>\\n<Feedback in Korean>\\n...(for all questions)"
+            "feedback": "<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n<User Input>\\n<Correct or Incorrect>\\n<Feedback in Korean>\\n<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n<User Input>\\n<Correct or Incorrect>\\n<Feedback in Korean>\\n...(for all questions)\\n"
         }}
 
         The conversation to evaluate:

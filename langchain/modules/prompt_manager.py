@@ -123,10 +123,11 @@ class PromptManager:
                             f"\nchat_history:{{history}}"
         else:
             # 이후 요청일 때는 간단하게 지침을 상기시키는 메시지를 포함
-            system_prompt = f"Please remember the initial instructions: generate only one quiz question in the specified format. " \
-                            "Do not provide any feedback or explanations. Focus solely on generating the quiz question. " \
-                            f"Remember that Use the following format: {quiz_example_output}" \
+            system_prompt = f"Please remember the initial instructions: generate quiz questions one by one in the specified format. " \
+                            "Do not provide any feedback or explanations. Focus solely on generating the quiz questions. " \
+                            f"Use the following format: {quiz_example_output}" \
                             f"\nchat_history:{{history}}"
+
 
         # 프롬프트 템플릿 구성
         prompt_template = ChatPromptTemplate.from_messages(
