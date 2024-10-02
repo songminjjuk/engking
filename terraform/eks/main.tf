@@ -15,32 +15,21 @@ module "eks" {
   ]
 
   eks_managed_node_groups = {
-    medium = {
-        min_size = 1
-        max_size = 8
-        desired_size = 1
-        instance_types = ["t3a.medium"]
-        ###
-        # iam_role_arn  = aws_iam_role.eks_role.arn # 연결된 IAM 역할
-        # security_groups = [aws_security_group.medium_nodegroup_sg.id] # large node group에 보안 그룹 적용
-    }
-    large = {
-        min_size = 1
-        max_size = 2
-        desired_size = 1
-        instance_types = ["t3a.large"]
-        ###
-        # iam_role_arn  = aws_iam_role.eks_role.arn # 연결된 IAM 역할
-        # security_groups = [aws_security_group.large_nodegroup_sg.id] # large node group에 보안 그룹 적용
-        labels = {
-          "node" = "large" # 레이블 추가
-        }
+    pri-cluster-nodegroups = {
+
+      min_size = 3
+      max_size = 4
+      desired_size = 3
+      instance_types = ["m5.xlarge"]
+      ###
+      # labels = {
+      #   "node" = "large" # 레이블 추가
+      # }
     }
   }
   cluster_endpoint_private_access = true
 }
-# 2. Large Nodegroup 및 Medium Nodegroup에 AdministratorAccess 역할을 추가
-#########################################
+
 
 
 # #svc 생성을 위한 webhook 포트(9443) 추가
@@ -276,23 +265,53 @@ resource "helm_release" "secrets-provider-aws" {
 
 
 resource "kubernetes_ingress_v1" "alb" {
-
   metadata {
-    name = "alb-ingress"
+    name      = "alb-ingress"
     namespace = "default"
-    
 
     annotations = {
-      "alb.ingress.kubernetes.io/load-balancer-name" = "app-alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-      "alb.ingress.kubernetes.io/group.name" = "engking-backends"
-      "alb.ingress.kubernetes.io/healthcheck-path" = "/healthz"
+      "alb.ingress.kubernetes.io/actions.ssl-redirect"  = jsonencode({
+        "Type"          = "redirect"
+        "RedirectConfig" = {
+          "Protocol"  = "HTTPS"
+          "Port"      = "443"
+          "StatusCode" = "HTTP_301"
+        }
+      })
+      "alb.ingress.kubernetes.io/certificate-arn"        = "arn:aws:acm:ap-northeast-1:355627705292:certificate/80ca62e7-7c66-40ec-a710-a4e8bcadfdb7"
+      "alb.ingress.kubernetes.io/group.name"             = "engking-backends"
+      "alb.ingress.kubernetes.io/healthcheck-path"       = "/health"
+      "alb.ingress.kubernetes.io/listen-ports"           = "[{\"HTTP\":80,\"HTTPS\":443}]"
+      "alb.ingress.kubernetes.io/load-balancer-name"     = "app-alb"
+      "alb.ingress.kubernetes.io/scheme"                 = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"            = "ip"
     }
   }
+
   spec {
     ingress_class_name = "alb"
+
+    # SSL Redirect Rule
     rule {
+      http {
+        path {
+          backend {
+            service {
+              name = "ssl-redirect"
+              port {
+                name = "use-annotation"
+              }
+            }
+          }
+          path      = "/"
+          path_type = "Prefix"
+        }
+      }
+    }
+
+    # j-back-service Rule
+    rule {
+      host = "jback.engking.site"
       http {
         path {
           backend {
@@ -303,9 +322,16 @@ resource "kubernetes_ingress_v1" "alb" {
               }
             }
           }
-          path = "/j-back"
+          path      = "/"
           path_type = "Prefix"
         }
+      }
+    }
+
+    # s-back-service Rule
+    rule {
+      host = "sback.engking.site"
+      http {
         path {
           backend {
             service {
@@ -315,21 +341,35 @@ resource "kubernetes_ingress_v1" "alb" {
               }
             }
           }
-          path = "/s-back"
+          path      = "/"
           path_type = "Prefix"
         }
+      }
+    }
+
+    # n-back-service Rule
+    rule {
+      host = "nback.engking.site"
+      http {
         path {
           backend {
             service {
               name = "n-back-service"
               port {
-                number = 5000
+                number = 8000
               }
             }
           }
-          path = "/n-back"
+          path      = "/"
           path_type = "Prefix"
         }
+      }
+    }
+
+    # langchain-service Rule
+    rule {
+      host = "langchain.engking.site"
+      http {
         path {
           backend {
             service {
@@ -339,13 +379,48 @@ resource "kubernetes_ingress_v1" "alb" {
               }
             }
           }
-          path = "/"
+          path      = "/"
           path_type = "Prefix"
         }
       }
     }
+
+    # kibana-svc Rule
+    rule {
+      http {
+        path {
+          backend {
+            service {
+              name = "kibana-svc"
+              port {
+                number = 5601
+              }
+            }
+          }
+          path      = "/"
+          path_type = "Prefix"
+        }
+      }
+    }
+    # rule {
+    #   http {
+    #     path {
+    #       backend {
+    #         service {
+    #           name = "elasticsearch-svc"
+    #           port {
+    #             number = 9200
+    #           }
+    #         }
+    #       }
+    #       path      = "/"
+    #       path_type = "Prefix"
+    #     }
+    #   }
+    # }
   }
 }
+
 
 # resource "kubernetes_service_v1" "svc-fast" {
 #   metadata {
