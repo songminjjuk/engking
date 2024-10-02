@@ -88,17 +88,15 @@ class EvaluateService:
         quiz_evaluation_prompt = f"""
         You are an expert at evaluating quiz sessions. Below is a conversation that includes a quiz session.
         Please evaluate the user's performance in answering each quiz question individually. For each question:
-        1. Display the original question in the following format:
+        1. Display the original question along with the user's answer in the following format:
         <Question Number> <Question>
         A) <Option 1>
         B) <Option 2>
         C) <Option 3>
         D) <Option 4>
+        Answer: A) <Option 1>
         
-        2. Display the user's answer on the next line in the format:
-        \\nAnswer: <User Input>\\n (e.g., \\nAnswer: A\\n) extracted)
-        
-        3. Provide specific feedback on the user's answer in the format:
+        2. Provide specific feedback on the user's answer in the format:
         <정답입니다. 또는 틀렸습니다.>
         <Feedback>
 
