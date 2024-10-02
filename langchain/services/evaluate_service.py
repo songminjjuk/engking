@@ -98,7 +98,7 @@ class EvaluateService:
         2. Display the user's answer in the format:
         Answer: <User Input> (e.g., Answer: A) extracted)
         
-        3. Provide specific feedback on the user's answer (whether it is correct or incorrect) in the format:
+        3. Provide specific feedback on the user's answer in the format:
         <정답입니다. 또는 틀렸습니다.>
         <Feedback>
 
@@ -108,7 +108,7 @@ class EvaluateService:
 
         {{
             "score": "<percentage_score as a string, without the % symbol>",
-            "feedback": "<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n<User Input>\\n<Correct or Incorrect>\\n<Feedback in Korean>\\n<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n<User Input>\\n<Correct or Incorrect>\\n<Feedback in Korean>\\n...(for all questions)\\n"
+            "feedback": "<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n\\nAnswer: <User Input>\\n<정답입니다. 또는 틀렸습니다.>\\n<Feedback in Korean>\\n...(for all questions)"
         }}
 
         The conversation to evaluate:
