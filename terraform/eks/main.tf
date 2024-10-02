@@ -1,5 +1,4 @@
 
-#############################
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "18.26.6"
@@ -32,7 +31,7 @@ module "eks" {
 
 
 
-# #svc 생성을 위한 webhook 포트(9443) 추가
+# svc 생성을 위한 webhook 포트(9443) 추가
 resource "aws_security_group_rule" "allow_9443" {
   type        = "ingress"
   from_port   = 9443
@@ -43,7 +42,7 @@ resource "aws_security_group_rule" "allow_9443" {
   security_group_id = module.eks.node_security_group_id
 }
 
-# #생성된 파드들이 rds에 접근 가능하도록 아웃바운드 3306 허용
+# 생성된 파드들이 rds에 접근 가능하도록 아웃바운드 3306 허용
 resource "aws_security_group_rule" "allow_3306" {
   type        = "egress"
   from_port   = 3306
@@ -67,7 +66,7 @@ resource "aws_security_group_rule" "allow_3306" {
 data "aws_eks_cluster_auth" "this" {
   name = "pri-cluster"
 }
-# # pri-cluster라는 name을 갖는 클러스터의 인증정보를 가져옴.
+# pri-cluster라는 name을 갖는 클러스터의 인증정보를 가져옴
 
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
@@ -76,7 +75,7 @@ provider "kubernetes" {
   
 }
 
-# # eks 클러스터와 api 통신 및 리소스 관리하기 위한 프로바이더
+# eks 클러스터와 api 통신 및 리소스 관리하기 위한 프로바이더
 
 provider "helm" {
   kubernetes {
@@ -86,9 +85,9 @@ provider "helm" {
   }
 }
 
-# # 로드밸런서 컨트롤러 설치
+# 로드밸런서 컨트롤러 설치
 
-# # 로컬 변수 선언
+# 로컬 변수 선언
 
 locals {
   lb_controller_iam_role_name        = "eks-aws-lb-ctrl"
@@ -96,7 +95,7 @@ locals {
 }
 
 
-# # IAM ROLE 생성 및 OIDC를 통해 EKS의 SA와 연결(신뢰할 수 있는 엔터티에 등록)
+# IAM ROLE 생성 및 OIDC를 통해 EKS의 SA와 연결(신뢰할 수 있는 엔터티에 등록)
 
 module "lb_controller_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
@@ -216,7 +215,6 @@ resource "kubernetes_service_account" "secret-sa" {
   }
 }
 
-# # 정책과 롤을 바인딩. 시크릿을 조회하고 값을 가져올 수 있게!
 
 resource "aws_iam_role_policy" "irsa_secret_role_policy" {
   name = "secrets_access_policy"
@@ -432,7 +430,7 @@ resource "kubernetes_ingress_v1" "alb" {
 #       app = "fast"
 #     }
 #     session_affinity = "ClientIP"
-#     # 동일한 아이피를 갖는 클라이언트는 동일한 pod에 연결시켜줌
+#     # 동일한 아이피를 갖는 클라이언트는 동일한 pod에 연결시켜주는듯
 #     port {
 #       port        = 80
 #       target_port = 8000
@@ -451,7 +449,7 @@ resource "kubernetes_ingress_v1" "alb" {
 # #   parameters:
 # #     objects: |
 # #         - objectName: "arn:aws:secretsmanager:ap-northeast-2:865577889736:secret:dev/rds-rftU0T"
-# # 시크릿매니저의 시크릿을 가져다 쓸 수 있게 해줌.
+# # 시크릿매니저의 시크릿을 가져다 쓸 수ㅇ ㅣㅆ게
 
 # resource "kubernetes_manifest" "aws_secrets_provider_class" {
 #   depends_on = [ helm_release.lbc ]
