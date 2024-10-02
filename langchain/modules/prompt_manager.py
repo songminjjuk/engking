@@ -1,6 +1,6 @@
 from langchain.prompts import ChatPromptTemplate
 
-quiz_example_output = """
+vocabulary_quiz_example_output = """
     Example format:
     <Question Number> <Question>
     A) <Option 1>
@@ -8,7 +8,14 @@ quiz_example_output = """
     C) <Option 3>
     D) <Option 4>
     """
-
+grammar_example_output = """
+    Example format:
+    <Question Number> Choose the appropriate sentence.
+    A) <Option 1>
+    B) <Option 2>
+    C) <Option 3>
+    D) <Option 4>
+"""
 class PromptManager:
     def create_chat_prompt_template(self, scenario, difficulty, first):
         scenario_prompts = {
@@ -99,6 +106,12 @@ class PromptManager:
             "Hard": "Additionally, the difficulty level is Hard, so create the quiz with expressions similar to the more challenging sections of TOEIC exams. "
                     "Use more complex sentence structures and a wider range of vocabulary, but still keep it relevant to TOEIC standards."
         }
+        if quiz_type == "vocabulary":
+            quiz_example_output = vocabulary_quiz_example_output
+        elif quiz_type == "grammar":
+            quiz_example_output = grammar_example_output
+        else:
+            quiz_example_output = vocabulary_quiz_example_output  # 기본값 설정
 
         quiz_prompt = quiz_type_prompts.get(quiz_type, "You are a helpful assistant creating quizzes.")
         difficulty_prompt = difficulty_prompts.get(difficulty, "Use appropriate language.")
@@ -110,10 +123,11 @@ class PromptManager:
                             f"\nchat_history:{{history}}"
         else:
             # 이후 요청일 때는 간단하게 지침을 상기시키는 메시지를 포함
-            system_prompt = f"Please remember the initial instructions: generate only one quiz question in the specified format. " \
-                            "Do not provide any feedback or explanations. Focus solely on generating the quiz question. " \
-                            f"Remember that Use the following format: {quiz_example_output}" \
+            system_prompt = f"Please remember the initial instructions: generate quiz questions one by one in the specified format. " \
+                            "Do not provide any feedback or explanations. Focus solely on generating the quiz questions. " \
+                            f"Use the following format: {quiz_example_output}" \
                             f"\nchat_history:{{history}}"
+
 
         # 프롬프트 템플릿 구성
         prompt_template = ChatPromptTemplate.from_messages(
