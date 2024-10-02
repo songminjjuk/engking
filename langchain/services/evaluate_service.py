@@ -96,10 +96,10 @@ class EvaluateService:
         D) <Option 4>
         
         2. Display the user's answer in the format:
-        Answer: <User Input>
+        Answer: <User Input> (e.g., Answer: A) extracted)
         
         3. Provide specific feedback on the user's answer (whether it is correct or incorrect) in the format:
-        <Correct or Incorrect>
+        <정답입니다. 또는 틀렸습니다.>
         <Feedback>
 
         Additionally, calculate the overall score as a percentage based on the number of correct answers out of the total number of questions.
