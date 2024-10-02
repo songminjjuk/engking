@@ -96,7 +96,7 @@ class EvaluateService:
         D) <Option 4>
         
         2. Display the user's answer on the next line in the format:
-        Answer: <User Input> (e.g., Answer: A) extracted)
+        \nAnswer: <User Input> (e.g., \nAnswer: A) extracted)
         
         3. Provide specific feedback on the user's answer in the format:
         <정답입니다. 또는 틀렸습니다.>
