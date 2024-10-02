@@ -94,10 +94,14 @@ class EvaluateService:
         B) <Option 2>
         C) <Option 3>
         D) <Option 4>
-        Answer: A) <Option 1>
-        
-        2. Provide specific feedback on the user's answer in the format:
-        <정답입니다. 또는 틀렸습니다.>
+        Answer: <User Input> (for example: Answer: A) extracted)
+
+        If the answer is correct:
+        정답입니다.
+
+        If the answer is incorrect:
+        틀렸습니다. 정답은 A) <Correct Answer>입니다.
+
         <Feedback>
 
         Additionally, calculate the overall score as a percentage based on the number of correct answers out of the total number of questions.
@@ -106,7 +110,7 @@ class EvaluateService:
 
         {{
             "score": "<percentage_score as a string, without the % symbol>",
-            "feedback": "<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n\\nAnswer: <User Input>\\n<정답입니다. 또는 틀렸습니다.>\\n<Feedback in Korean>\\n...(for all questions)"
+            "feedback": "Please refer to the format above for how to display each question, answer, and feedback."
         }}
 
         The conversation to evaluate:
