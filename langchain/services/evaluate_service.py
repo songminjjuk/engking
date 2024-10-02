@@ -72,10 +72,7 @@ class EvaluateService:
     def evaluate_quiz(data):
         user_id = data.get('user_id')
         conversation_id = data.get('conversation_id')
-        quiz_type = data.get('quiz_type', 'vocabulary')
-        difficulty = data.get('difficulty', 'Normal')
-        user_input = data.get('input', 'Please give me a quiz question.')
-        first = data.get('first', False)
+
         memory = memory_manager.get_memory(user_id, conversation_id)
 
         if not memory.chat_memory.messages:
@@ -89,25 +86,53 @@ class EvaluateService:
         )
         # memory.chat_memory.add_user_message(HumanMessage(content=message_text))
         quiz_evaluation_prompt = f"""
+        # You are an expert at evaluating quiz sessions. Below is a conversation that includes a quiz session.
+        # Please evaluate the user's performance in answering the quiz questions. Calculate the score as a percentage based on the number of correct answers and total questions.
+        # Additionally, provide feedback in Korean that focuses on the user's English skills, including grammar, vocabulary, and comprehension.
+
+        # Ensure your response is strictly in the following JSON format without any additional comments or text:
+
+        # {{
+        #     "score": "<percentage_score as string>",
+        #     "feedback": "<feedback in Korean with properly escaped newlines, e.g., \\n>"
+        # }}
+
+        # The response should be a valid JSON string only.
+        # Conversation:
+        # {conversation_text}
+
+        # Remember, your response should be a valid JSON string, and do not include any extra information or comments outside the JSON.
+        
         You are an expert at evaluating quiz sessions. Below is a conversation that includes a quiz session.
-        Please evaluate the user's performance in answering the quiz questions. Calculate the score as a percentage based on the number of correct answers and total questions.
-        Additionally, provide feedback in Korean that focuses on the user's English skills, including grammar, vocabulary, and comprehension.
+        Please evaluate the user's performance in answering each quiz question individually. For each question:
+        1. Display the original question in the following format:
+        <Question Number> <Question>
+        A) <Option 1>
+        B) <Option 2>
+        C) <Option 3>
+        D) <Option 4>
+        
+        2. Display the user's answer in the format:
+        <User Input>
+        
+        3. Provide specific feedback on the user's answer (whether it is correct or incorrect) in the format:
+        <Correct or Incorrect>
+        <Feedback>
+
+        Additionally, calculate the overall score as a percentage based on the number of correct answers out of the total number of questions.
 
         Ensure your response is strictly in the following JSON format without any additional comments or text:
 
         {{
-            "score": "<percentage_score as string>",
-            "feedback": "<feedback in Korean with properly escaped newlines, e.g., \\n>"
+            "score": "<percentage_score as a string, without the % symbol>",
+            "feedback": "<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n<User Input>\\n<Correct or Incorrect>\\n<Feedback in Korean>\\n<Question Number> <Question>\\nA) <Option 1>\\nB) <Option 2>\\nC) <Option 3>\\nD) <Option 4>\\n<User Input>\\n<Correct or Incorrect>\\n<Feedback in Korean>\\n...(for all questions)"
         }}
 
-        The response should be a valid JSON string only.
-        Conversation:
-        {conversation_text}
+        The conversation to evaluate:
+        {{conversation_text}}
 
-        Remember, your response should be a valid JSON string, and do not include any extra information or comments outside the JSON.
-        """
-
-        
+        Remember, the response must be a valid JSON string, and you should not include any extra information or comments outside the JSON structure.
+        """ 
         response = bedrock_llm.invoke(quiz_evaluation_prompt)
         memory_manager.delete_memory(user_id, conversation_id)
         print("response_content: ", response.content)
@@ -124,6 +149,7 @@ class EvaluateService:
                 "score": str(score),
                 "feedback": feedback
             })
+        
         except json.JSONDecodeError as e:
             print(f"JSONDecodeError: {str(e)} - Response content: {response.content}")
             return JSONResponse(content={"error": "Invalid response from the LLM service"}, status_code=500)
