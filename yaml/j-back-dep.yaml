@@ -5,6 +5,7 @@ metadata:
   labels:
     app: j-backend
 spec:
+  revisionHistoryLimit: 2
   replicas: 1
   selector:
     matchLabels:
@@ -16,6 +17,6 @@ spec:
     spec:
       containers:
       - name: j-backend-container
-        image: 355627705292.dkr.ecr.ap-northeast-1.amazonaws.com/engking-dynamo:latest
+        image: 355627705292.dkr.ecr.ap-northeast-1.amazonaws.com/engking-dynamo:28
         ports:
         - containerPort: 8080

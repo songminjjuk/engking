@@ -280,7 +280,7 @@ resource "kubernetes_ingress_v1" "alb" {
       })
       "alb.ingress.kubernetes.io/certificate-arn"        = "arn:aws:acm:ap-northeast-1:355627705292:certificate/80ca62e7-7c66-40ec-a710-a4e8bcadfdb7"
       "alb.ingress.kubernetes.io/group.name"             = "engking-backends"
-      "alb.ingress.kubernetes.io/healthcheck-path"       = "/health"
+      "alb.ingress.kubernetes.io/healthcheck-path"       = "/status"
       "alb.ingress.kubernetes.io/listen-ports"           = "[{\"HTTP\":80,\"HTTPS\":443}]"
       "alb.ingress.kubernetes.io/load-balancer-name"     = "app-alb"
       "alb.ingress.kubernetes.io/scheme"                 = "internet-facing"

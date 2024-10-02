@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: n-back-service
+spec:
+  selector:
+    app: n-backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
