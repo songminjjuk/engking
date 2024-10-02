@@ -95,7 +95,7 @@ class EvaluateService:
         C) <Option 3>
         D) <Option 4>
         
-        2. Display the user's answer in the format:
+        2. Display the user's answer on the next line in the format:
         Answer: <User Input> (e.g., Answer: A) extracted)
         
         3. Provide specific feedback on the user's answer in the format:
