@@ -112,7 +112,7 @@ class EvaluateService:
         }}
 
         The conversation to evaluate:
-        {{conversation_text}}
+        {conversation_text}
 
         Remember, the response must be a valid JSON string, and you should not include any extra information or comments outside the JSON structure.
         """ 
