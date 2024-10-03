@@ -8,8 +8,8 @@ metadata:
 data:
   fluent-bit.conf: |
     [SERVICE]
-        Flush         1
-        Log_Level     info
+        Flush         5
+        Log_Level     error
         Daemon        off
         Parsers_File  parsers.conf
         HTTP_Server   On
@@ -26,28 +26,23 @@ data:
         Name              tail
         Tag               kube.*
         Path              /var/log/containers/*.log
-        Parser            cri
+        # Parser            cri
         DB                /var/log/flb_kube.db
         Mem_Buf_Limit     30MB
         Skip_Long_Lines   On
         Refresh_Interval  10
-        #Multiline        On
-        #Multiline.Parser multiline
-        #Read_from_Head   true
+        Read_from_Head    On
+        #Multiline         On
+        #Multiline.Parser  cri, multiline_java
 
-    #[INPUT]
-    #    Name              syslog
-    #    Listen            0.0.0.0
-    #    Port              5140
-    #    Mode              udp
-    #    Parser            syslog
-    #    Mem_Buf_Limit     30MB
-
-    [INPUT]
-        Name              systemd
-        Tag               host.*
-        Path              /var/log/journal
-        Systemd_Filter    _SYSTEMD_UNIT=containerd.service
+        #[INPUT]
+        #Name              systemd
+        #Tag               host.*
+        #Path              /var/log/journal
+        #Mem_Buf_Limit     10MB
+        #Refresh_Interval  30
+        #Systemd_Filter    _SYSTEMD_UNIT=containerd.service
+        #Systemd_Filter    _SYSTEMD_UNIT=kubelet.service
 
   filter-kubernetes.conf: |
     [FILTER]
@@ -62,10 +57,13 @@ data:
         K8S-Logging.Parser  On
         K8S-Logging.Exclude Off
 
+    [FILTER]
+        Name                  multiline
+        Match                 kube.*
+        multiline.key_content log
+        multiline.parser      cri, multiline_java
+
   output-elasticsearch.conf: |
-    [OUTPUT]
-        Name            stdout
-        Match           host.*
     [OUTPUT]
         Name            es
         Match           kube.*
@@ -77,16 +75,17 @@ data:
         Retry_Limit     False
         Generate_ID     On
 
-    [OUTPUT]
-        Name            es
-        Match           host.*
-        Host            elasticsearch-svc.default.svc.cluster.local
-        Port            9200
-        Logstash_Format On
-        Logstash_Prefix host-logs
-        Type            _doc
-        Retry_Limit     False
-        Generate_ID     On
+        #[OUTPUT]
+        #Name            es
+        #Match           host.*
+        #Host            elasticsearch-svc.default.svc.cluster.local
+        #Port            9200
+        #Logstash_Format On
+        #Logstash_Prefix systemd-log
+        #Type            _doc
+        #Retry_Limit     False
+        #Generate_ID     On
+
   output-s3.conf: |
     [OUTPUT]
         Name               s3
@@ -96,14 +95,26 @@ data:
         total_file_size    1M
         upload_timeout     5m
         use_put_object     On
-        s3_key_format      /logs/$TAG/%Y-%m-%d/%H-%M-%S-$UUID.gz
+        s3_key_format      /logs/$TAG/%Y-%m-%d/%H-%M-%S-$UUID.json
         s3_key_format_tag_delimiters ._
-        compression        gzip
+        #compression        json
+
+        #[OUTPUT]
+        #Name               s3
+        #Match              host.*
+        #bucket             engking-system-log-bucket
+        #region             ap-northeast-1
+        #total_file_size    1M
+        #upload_timeout     5m
+        #use_put_object     On
+        #s3_key_format      /logs/$TAG/%Y-%m-%d/%H-%M-%S-$UUID.json
+        #s3_key_format_tag_delimiters ._
+        #        compression        json
 
   parsers.conf: |
     [PARSER]
       Name        cri
-      Format      regex
+      Format        regex
       Regex       ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
       Time_Key    time
       Time_Format %Y-%m-%dT%H:%M:%S.%L%z
@@ -114,9 +125,9 @@ data:
       Time_Key time
       Time_Format %d/%b/%Y:%H:%M:%S %z
 
-    [PARSER]
-      Name        syslog
-      Format      regex
-      Regex       ^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$
-      Time_Key    time
-      Time_Format %b %d %H:%M:%S
+    [MULTILINE_PARSER]
+      Name          multiline_java
+      Type          regex
+      Flush_Interval 5
+      Rule_0        "start_state"   "/^\[?\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]?/i"  "cont"
+      Rule_1        "cont"          "/^\s+|at\s+/i"  "cont"
