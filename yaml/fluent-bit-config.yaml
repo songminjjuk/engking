@@ -35,14 +35,13 @@ data:
         #Multiline         On
         #Multiline.Parser  cri, multiline_java
 
-        #[INPUT]
-        #Name              systemd
-        #Tag               host.*
-        #Path              /var/log/journal
-        #Mem_Buf_Limit     10MB
-        #Refresh_Interval  30
-        #Systemd_Filter    _SYSTEMD_UNIT=containerd.service
-        #Systemd_Filter    _SYSTEMD_UNIT=kubelet.service
+    [INPUT]
+        Name              systemd
+        Tag               host.*
+        Path              /var/log/journal
+        Mem_Buf_Limit     10MB
+        Systemd_Filter    _SYSTEMD_UNIT=containerd.service
+        Systemd_Filter    _SYSTEMD_UNIT=kubelet.service
 
   filter-kubernetes.conf: |
     [FILTER]
@@ -74,17 +73,19 @@ data:
         Type            _doc
         Retry_Limit     False
         Generate_ID     On
+        Write_Operation upsert
 
-        #[OUTPUT]
-        #Name            es
-        #Match           host.*
-        #Host            elasticsearch-svc.default.svc.cluster.local
-        #Port            9200
-        #Logstash_Format On
-        #Logstash_Prefix systemd-log
-        #Type            _doc
-        #Retry_Limit     False
-        #Generate_ID     On
+    [OUTPUT]
+        Name            es
+        Match           host.*
+        Host            elasticsearch-svc.default.svc.cluster.local
+        Port            9200
+        Logstash_Format On
+        Logstash_Prefix systemd-log
+        Type            _doc
+        Retry_Limit     False
+        Generate_ID     On
+        Write_Operation upsert
 
   output-s3.conf: |
     [OUTPUT]
@@ -99,16 +100,16 @@ data:
         s3_key_format_tag_delimiters ._
         #compression        json
 
-        #[OUTPUT]
-        #Name               s3
-        #Match              host.*
-        #bucket             engking-system-log-bucket
-        #region             ap-northeast-1
-        #total_file_size    1M
-        #upload_timeout     5m
-        #use_put_object     On
-        #s3_key_format      /logs/$TAG/%Y-%m-%d/%H-%M-%S-$UUID.json
-        #s3_key_format_tag_delimiters ._
+    [OUTPUT]
+        Name               s3
+        Match              host.*
+        bucket             engking-system-log-bucket
+        region             ap-northeast-1
+        total_file_size    1M
+        upload_timeout     5m
+        use_put_object     On
+        s3_key_format      /logs/$TAG/%Y-%m-%d/%H-%M-%S-$UUID.json
+        s3_key_format_tag_delimiters ._
         #        compression        json
 
   parsers.conf: |
