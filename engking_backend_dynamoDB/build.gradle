@@ -49,9 +49,6 @@ dependencies {
 	implementation 'software.amazon.awssdk:s3'        // AWS SDK v2 for S3
 
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
-
-	// 로그를 JSON 형식으로 저장하기 위한 Logback 의존성
-	implementation 'net.logstash.logback:logstash-logback-encoder:7.3'
 }
 
 dependencyManagement {
