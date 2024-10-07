@@ -46,7 +46,10 @@ pipeline {
         }
         stage('Unit Test') {
             steps {
-                sh 'source venv/bin/activate && pytest langchain/test/'
+                sh '''
+                . venv/bin/activate
+                pytest langchain/test/
+                '''
             }
             post {
                 failure {
