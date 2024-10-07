@@ -30,7 +30,7 @@ pipeline {
                 }
             }
         }
-	stage('Compile Check') {
+	    stage('Compile Check') {
             steps {
                 sh 'python3 -m compileall langchain/'
             }
@@ -41,6 +41,20 @@ pipeline {
                 }
                 success {
                     sh "echo compile success"
+                }
+            }
+        }
+        stage('Unit Test') {
+            steps {
+                sh 'source venv/bin/activate && pytest langchain/test/'
+            }
+            post {
+                failure {
+                    sh "echo tests failed"
+                    error("Stopping pipeline due to unit test failure")
+                }
+                success {
+                    sh "echo tests passed"
                 }
             }
         }
