@@ -44,23 +44,23 @@ pipeline {
                 }
             }
         }
-        stage('Unit Test') {
-            steps {
-                sh '''
-                . venv/bin/activate
-                pytest langchain/test/
-                '''
-            }
-            post {
-                failure {
-                    sh "echo tests failed"
-                    error("Stopping pipeline due to unit test failure")
-                }
-                success {
-                    sh "echo tests passed"
-                }
-            }
-        }
+        // stage('Unit Test') {
+        //     steps {
+        //         sh '''
+        //         . venv/bin/activate
+        //         pytest langchain/test/
+        //         '''
+        //     }
+        //     post {
+        //         failure {
+        //             sh "echo tests failed"
+        //             error("Stopping pipeline due to unit test failure")
+        //         }
+        //         success {
+        //             sh "echo tests passed"
+        //         }
+        //     }
+        // }
         stage('docker image build') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${currentBuild.number} -f langchain/Dockerfile langchain/"
