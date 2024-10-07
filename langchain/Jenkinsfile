@@ -32,7 +32,7 @@ pipeline {
         }
 	stage('Compile Check') {
             steps {
-                sh 'python -m compileall langchain/'
+                sh 'python3 -m compileall langchain/'
             }
             post {
                 failure {
