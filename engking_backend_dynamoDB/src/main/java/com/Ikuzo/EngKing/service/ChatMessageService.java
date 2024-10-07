@@ -70,26 +70,48 @@ public class ChatMessageService {
     }
 
     public void deleteChatMessage(String memberId, String chatRoomId, String messageId) {
-        // 삭제하려는 항목의 키 조건을 생성
-        Map<String, AttributeValue> keyToDelete = new HashMap<>();
-        keyToDelete.put("ChatRoomId", AttributeValue.builder().s(chatRoomId).build());
-        keyToDelete.put("MessageId", AttributeValue.builder().s(messageId).build());
-        keyToDelete.put("MemberId", AttributeValue.builder().s(memberId).build());
-
-        // DeleteItem 요청 생성
-        DeleteItemRequest deleteRequest = DeleteItemRequest.builder()
-                .tableName("EngKing-ChatMessages")
-                .key(keyToDelete)
-                .build();
-
         try {
-            log.info("Deleting message: memberId={}, chatRoomId={}, messageId={}", memberId, chatRoomId, messageId);
+            // Step 1: messageId로 해당 항목 조회 (chatRoomId도 함께 사용하여 정확한 항목 조회)
+            Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+            expressionAttributeValues.put(":ChatRoomId", AttributeValue.builder().s(chatRoomId).build());
+            expressionAttributeValues.put(":MessageId", AttributeValue.builder().s(messageId).build());
+
+            QueryRequest queryRequest = QueryRequest.builder()
+                    .tableName("EngKing-ChatMessages")
+                    .keyConditionExpression("ChatRoomId = :ChatRoomId AND MessageId = :MessageId")
+                    .expressionAttributeValues(expressionAttributeValues)
+                    .build();
+
+            QueryResponse queryResponse = dynamoDbClient.query(queryRequest);
+            List<Map<String, AttributeValue>> items = queryResponse.items();
+
+            // Step 2: 조회된 항목이 있는지 확인
+            if (items.isEmpty()) {
+                log.info("No message found for deletion: memberId={}, chatRoomId={}, messageId={}", memberId, chatRoomId, messageId);
+                return;  // 항목이 없으면 삭제할 필요가 없으므로 종료
+            }
+
+            // Step 3: messageTime을 추출
+            Map<String, AttributeValue> item = items.get(0);  // 첫 번째 항목을 가져옴 (일치하는 항목이 1개일 것으로 가정)
+            String messageTime = item.get("MessageTime").s();  // messageTime을 추출
+
+            // Step 4: 파티션 키와 정렬 키로 항목 삭제
+            Map<String, AttributeValue> keyToDelete = new HashMap<>();
+            keyToDelete.put("ChatRoomId", AttributeValue.builder().s(chatRoomId).build());  // 파티션 키
+            keyToDelete.put("MessageTime", AttributeValue.builder().s(messageTime).build());  // 정렬 키
+
+            DeleteItemRequest deleteRequest = DeleteItemRequest.builder()
+                    .tableName("EngKing-ChatMessages")
+                    .key(keyToDelete)
+                    .build();
+
             DeleteItemResponse deleteResponse = dynamoDbClient.deleteItem(deleteRequest);
 
-            log.info("Delete successful for messageId={}, chatRoomId={}, memberId={}", messageId, chatRoomId, memberId);
+            log.info("Delete successful for messageId={}, chatRoomId={}, messageTime={}, memberId={}", messageId, chatRoomId, messageTime, memberId);
         } catch (DynamoDbException e) {
             log.error("Failed to delete message: memberId={}, chatRoomId={}, messageId={}, error={}", memberId, chatRoomId, messageId, e.getMessage());
         }
     }
+
 
 }
