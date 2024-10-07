@@ -71,19 +71,19 @@ public class ChatMessageService {
 
     public void deleteChatMessage(String memberId, String chatRoomId, String messageId) {
         try {
-            // Step 1: messageId로 해당 항목 조회 (chatRoomId도 함께 사용하여 정확한 항목 조회)
+            // Step 1: Scan으로 messageId로 해당 항목 조회 (chatRoomId도 함께 사용하여 정확한 항목 조회)
             Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
             expressionAttributeValues.put(":ChatRoomId", AttributeValue.builder().s(chatRoomId).build());
             expressionAttributeValues.put(":MessageId", AttributeValue.builder().s(messageId).build());
 
-            QueryRequest queryRequest = QueryRequest.builder()
+            ScanRequest scanRequest = ScanRequest.builder()
                     .tableName("EngKing-ChatMessages")
-                    .keyConditionExpression("ChatRoomId = :ChatRoomId AND MessageId = :MessageId")
+                    .filterExpression("ChatRoomId = :ChatRoomId AND MessageId = :MessageId")
                     .expressionAttributeValues(expressionAttributeValues)
                     .build();
 
-            QueryResponse queryResponse = dynamoDbClient.query(queryRequest);
-            List<Map<String, AttributeValue>> items = queryResponse.items();
+            ScanResponse scanResponse = dynamoDbClient.scan(scanRequest);
+            List<Map<String, AttributeValue>> items = scanResponse.items();
 
             // Step 2: 조회된 항목이 있는지 확인
             if (items.isEmpty()) {
@@ -112,6 +112,7 @@ public class ChatMessageService {
             log.error("Failed to delete message: memberId={}, chatRoomId={}, messageId={}, error={}", memberId, chatRoomId, messageId, e.getMessage());
         }
     }
+
 
 
 }
