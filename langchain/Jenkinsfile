@@ -37,6 +37,7 @@ pipeline {
             post {
                 failure {
                     sh "echo compile failed"
+                    error("Stopping pipeline due to compile failure") 
                 }
                 success {
                     sh "echo compile success"
