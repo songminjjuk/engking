@@ -43,19 +43,19 @@ metadata:
 spec:
   selector:
     matchLabels:
-      k8s-app: fluent-bit-logging  # Ensure this matches your pod template labels
+      k8s-app: fluent-bit-logging
   template:
     metadata:
       labels:
-        k8s-app: fluent-bit-logging  # Ensure this matches your selector labels
+        k8s-app: fluent-bit-logging
     spec:
       serviceAccountName: fluent-bit
       containers:
         - name: fluent-bit
-          securityContext:
-            capabilities:
-              add:
-                - CAP_SYS_ADMIN
+          #securityContext:
+            #capabilities:
+              #add:
+                #- CAP_SYS_ADMIN
           image: fluent/fluent-bit:1.9.10
           env:
             - name: FLUENT_ELASTICSEARCH_HOST
@@ -71,13 +71,6 @@ spec:
               mountPath: /var/log
             - name: varlibdockercontainers
               mountPath: /var/lib/docker/containers
-              readOnly: true
-            - name: varlogjournal
-              mountPath: /var/log/journal
-              readOnly: true
-            - name: runlogjournal
-              mountPath: /run/log/journal
-              readOnly: true
       terminationGracePeriodSeconds: 30
       volumes:
         - name: config
@@ -89,12 +82,6 @@ spec:
         - name: varlibdockercontainers
           hostPath:
             path: /var/lib/docker/containers
-        - name: varlogjournal
-          hostPath:
-            path: /var/log/journal
-        - name: runlogjournal
-          hostPath:
-            path: /run/log/journal
       tolerations:
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
