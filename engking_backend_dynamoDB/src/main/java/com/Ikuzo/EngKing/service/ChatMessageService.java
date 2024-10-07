@@ -69,4 +69,27 @@ public class ChatMessageService {
         }
     }
 
+    public void deleteChatMessage(String memberId, String chatRoomId, String messageId) {
+        // 삭제하려는 항목의 키 조건을 생성
+        Map<String, AttributeValue> keyToDelete = new HashMap<>();
+        keyToDelete.put("ChatRoomId", AttributeValue.builder().s(chatRoomId).build());
+        keyToDelete.put("MessageId", AttributeValue.builder().s(messageId).build());
+        keyToDelete.put("MemberId", AttributeValue.builder().s(memberId).build());
+
+        // DeleteItem 요청 생성
+        DeleteItemRequest deleteRequest = DeleteItemRequest.builder()
+                .tableName("EngKing-ChatMessages")
+                .key(keyToDelete)
+                .build();
+
+        try {
+            log.info("Deleting message: memberId={}, chatRoomId={}, messageId={}", memberId, chatRoomId, messageId);
+            DeleteItemResponse deleteResponse = dynamoDbClient.deleteItem(deleteRequest);
+
+            log.info("Delete successful for messageId={}, chatRoomId={}, memberId={}", messageId, chatRoomId, memberId);
+        } catch (DynamoDbException e) {
+            log.error("Failed to delete message: memberId={}, chatRoomId={}, messageId={}, error={}", memberId, chatRoomId, messageId, e.getMessage());
+        }
+    }
+
 }

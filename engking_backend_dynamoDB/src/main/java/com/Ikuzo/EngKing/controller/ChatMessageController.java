@@ -83,4 +83,32 @@ public class ChatMessageController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @PostMapping("/deletemessage")
+    public ResponseEntity<ChatMessageResponseDto> deleteChatMessageByChatRoomIdAndMemberIdAndMessageId(@RequestBody ChatMessageRequestDto chatMessageRequestDto) {
+        String memberId = chatMessageRequestDto.getMemberId();
+        String chatRoomId = chatMessageRequestDto.getChatRoomId();
+        String messageId = chatMessageRequestDto.getMessageId();
+
+        try {
+            // 로그 기록
+            log.info("Delete request received: memberId={}, chatRoomId={}, messageId={}", memberId, chatRoomId, messageId);
+
+            // 메시지 삭제 처리
+            chatMessageService.deleteChatMessage(memberId, chatRoomId, messageId);
+
+            // 삭제 성공 로그 기록
+            log.info("Message deleted successfully: memberId={}, chatRoomId={}, messageId={}", memberId, chatRoomId, messageId);
+
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();  // 성공 시 204 응답 반환
+
+        } catch (Exception e) {
+            // 에러 발생 시 로그 기록
+            log.error("Error deleting message: memberId={}, chatRoomId={}, messageId={}, error={}", memberId, chatRoomId, messageId, e.getMessage(), e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();  // 실패 시 500 응답 반환
+        }
+
+
+    }
 }
