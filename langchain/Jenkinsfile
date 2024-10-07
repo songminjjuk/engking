@@ -30,6 +30,19 @@ pipeline {
                 }
             }
         }
+	stage('Compile Check') {
+            steps {
+                sh 'python -m compileall langchain/'
+            }
+            post {
+                failure {
+                    sh "echo compile failed"
+                }
+                success {
+                    sh "echo compile success"
+                }
+            }
+        }
         stage('docker image build') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${currentBuild.number} -f langchain/Dockerfile langchain/"
@@ -94,7 +107,5 @@ pipeline {
                 }
             }
         }
-       
-
     }
 }
