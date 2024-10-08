@@ -1,6 +1,11 @@
 # 베이스 이미지 설정
 FROM python:3.9-slim
 
+# 타임존 추가
+ENV TZ=Asia/Seoul
+RUN apt-get update && apt-get install -y tzdata && \
+    ln -snf /usr/share/zoneinfo/Asia/Seoul /etc/localtime && echo "Asia/Seoul" > /etc/timezone
+
 # 작업 디렉터리 생성 및 설정
 WORKDIR /app
 
