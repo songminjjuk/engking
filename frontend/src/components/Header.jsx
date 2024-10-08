@@ -30,6 +30,7 @@ const Header = (props) => {
         </div>
         <nav className="header__menu">
           <ul>
+            <li><NavLink to="/info">서비스 소개</NavLink></li>
             <li><NavLink to="/quizdiffi">퀴즈</NavLink></li>
             <li><NavLink to="/about">회화</NavLink></li>
             {email && (

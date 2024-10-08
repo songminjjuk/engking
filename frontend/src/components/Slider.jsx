@@ -16,7 +16,7 @@ const Slider = ( props ) => {
                             </p>
                             
                             <div className="btn">
-                                <a href="/">자세히 보기</a>
+                                <a href="/info">자세히 보기</a>
                                 <a href="/" className="black">사이트 보기</a>
                             </div>
                         </div>

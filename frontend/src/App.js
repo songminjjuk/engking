@@ -22,7 +22,8 @@ import QuizTitle from './components/QuizTitlePage';
 import ConvResultPage from './components/ConvResultPage';
 import QuizResultPage from './components/QuizResultPage';
 import PrivateRoute from './components/PrivateRoute';
-
+import TestPage from './components/test';
+import InfoPage from './components/InfoPage';
 import './assets/css/reset.css';
 import './assets/css/style.css';
 
@@ -66,7 +67,7 @@ const App = () => {
             element={
               <>
                 <Slider element="nexon" />
-                <Image element="section nexon" title="Introduction" />
+                <Image element="section nexon" title="Introduction" isLoggedIn={isLoggedIn}/>
                 <Member element="section nexon" title="Team Member" />
               </>
             } 
@@ -82,7 +83,8 @@ const App = () => {
           <Route path="/quiztitle" element={<QuizTitle />} />
           <Route path="/quizresult" element={<QuizResultPage />} />
           <Route path="/convresult" element={<ConvResultPage />} />
-
+          <Route path="/test" element={<TestPage />} />
+          <Route path="/info" element={<InfoPage />} />
           {/* Protected routes */}
           <Route 
             path="/about" 

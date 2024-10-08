@@ -1,0 +1,81 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alb-ingress
+  namespace: default
+  annotations:
+    alb.ingress.kubernetes.io/actions.ssl-redirect: |
+      {"Type": "redirect", "RedirectConfig": {"Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:ap-northeast-1:355627705292:certificate/80ca62e7-7c66-40ec-a710-a4e8bcadfdb7"
+    alb.ingress.kubernetes.io/group.name: "engking-backends"
+    alb.ingress.kubernetes.io/healthcheck-path: "/status"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80,"HTTPS":443}]'
+    alb.ingress.kubernetes.io/load-balancer-name: "app-alb"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: ssl-redirect
+                port:
+                  name: use-annotation
+
+    - host: jback.engking.site
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: j-back-service
+                port:
+                  number: 8080
+
+    - host: sback.engking.site
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: s-back-service
+                port:
+                  number: 8080
+
+    - host: nback.engking.site
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: n-back-service
+                port:
+                  number: 8000
+
+    - host: langchain.engking.site
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: langchain-service
+                port:
+                  number: 5000
+
+    - http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana-svc
+                port:
+                  number: 5601

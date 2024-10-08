@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: langchain-dep
+  labels:
+    app: langchain
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: langchain
+  template:
+    metadata:
+      labels:
+        app: langchain
+    spec:
+      containers:
+      - name: langchain-container
+        image: 355627705292.dkr.ecr.ap-northeast-1.amazonaws.com/langchain:38
+        ports:
+        - containerPort: 5000
+        envFrom:
+          - configMapRef:
+              name: langchain-config

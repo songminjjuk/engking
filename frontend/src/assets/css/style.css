@@ -45,7 +45,9 @@
     padding: 10px 30px;
     border-radius: 50px;
 }
-
+/* .active {
+    font-weight: bold;
+    color: #f7a8c5; /* Example active style */
 /* slider */
 .slider {
     position: relative;
@@ -154,12 +156,13 @@
     padding: 200px 30px 30px 30px;
     box-sizing: border-box;
     color: #fff;
+    border-radius: 10px;
 }
 .image.img1 {
-    background: url(../img/loopy.jpg) no-repeat center / cover;
+    background: url(../img/001.png) no-repeat center / cover;
 }
 .image.img2 {
-    background: url(../img/bara.jpg) no-repeat center / cover;
+    background: url(../img/002.png) no-repeat center / cover;
 }
 .image.m1 {
     background: url(../img/m1.png) no-repeat center / cover;
@@ -203,6 +206,7 @@
 .image__title {
     font-size: 32px;
     margin-bottom: 10px;
+    color:#000000;
 }
 .image__desc {
     font-size: 16px;
@@ -216,18 +220,18 @@
     -webkit-box-orient: vertical;
     margin-bottom: 10px;
     text-align: left;
-    color: #fff;
+    color: #000000;
 }
 .image__btn {
     font-size: 16px;
     font-weight: 300;
     color: #fff;
-    background-color: #B45A30;
+    background-color: #f03382;
     padding: 10px 20px;
     display: inline-block;
 }
 .image__btn.yellow {
-    background-color: #B59140;
+    background-color: #f03382;
 }
 
 /* imgText__inner */
@@ -566,7 +570,7 @@
 }
 .button-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* Creates 4 columns */
+    grid-template-columns: repeat(3, 1fr); /* Creates 4 columns */
     grid-gap: 50px; /* Adds spacing between the buttons */
     justify-items: center; /* Centers the buttons horizontally within their grid cells */
     align-items: center; /* Centers buttons vertically */
@@ -808,11 +812,12 @@ label[for="terms"] {
   }
   
   .profile-section {
-    width: 30%;
-    padding: 20px;
+    width: 100%;
+    padding: 30px;
     background-color: #f7f5f8;
     border-radius: 8px;
     text-align: center;
+    font-family: 'NexonLv1Gothic';
   }
   
   .mypage-button {
@@ -837,6 +842,7 @@ label[for="terms"] {
   
   .profile-details div {
     margin: 10px 0;
+    font-size: 18px;
   }
   
   .profile-details strong {
@@ -844,8 +850,9 @@ label[for="terms"] {
   }
   
   .history-section {
-    width: 70%;
-    padding: 20px;
+    /* width: 70%;
+    padding: 20px; */
+    font-family: '맑은 고딕';
   }
   
   .history-section h2 {
@@ -874,7 +881,12 @@ label[for="terms"] {
   
   .history-card p {
     margin-top: 10px;
-    font-size: 16px;
+    font-size: 18px;
+    color: #000;
+  }
+  .history-card:hover{
+    background-color: #fbcfcf;
+    cursor: pointer;
   }
 
   .edit-info-button {
@@ -1153,4 +1165,273 @@ label[for="terms"] {
     background-color: #f596b2;
   }
 
+ /* Info.css */
+ .info-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+  }
   
+  /* Banner styling */
+  .banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .banner-image {
+    width: 50%; /* Adjust image size as needed */
+    margin-right: 20px;
+  }
+  
+  .logo {
+    width: 400px; /* Adjust the logo size */
+  }
+  
+  .text-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: left; /* Vertically center content */
+    align-items: left; /* Horizontally center content */
+    padding: 40px;
+  }
+  
+  .features-list {
+    list-style-type: disc;
+    padding-left: 20px;
+    text-align: left;
+  }
+  
+  .start-steps {
+    list-style-type: decimal;
+    padding-left: 20px;
+    text-align: left;
+  }
+  
+  .text-container h2 {
+    font-size: 2.7rem;
+    margin-bottom: 20px;
+    margin-top: 50px;
+    font-weight: bold;
+    color: #000000;
+  }
+  
+  .text-container p, li {
+    font-size: 1.2rem;
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .feature-icon {
+    width: 250px;
+    height: 250px;
+    margin-right: 20px;
+    border-radius: 10px;
+  }
+  
+  .feature-text {
+    flex: 1;
+  }
+  
+  .features-list {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .wide-banner {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-bottom: 10px;
+  }
+  
+  .wide-banner img {
+    width: 100%;
+    height: auto; /* 이미지가 비율에 맞게 조정되도록 */
+    border-radius: 10px;
+  }
+  
+  .calendar-section h3 {
+    margin-top: 15px; /* Space above the events heading */
+  }
+  .content-container {
+    margin-left: 100px; /* Create space for the fixed profile section */
+    width: calc(100% - 100px); /* Adjust width to account for margin */
+    flex: 1;
+  }
+
+.calendar-section {
+    margin-bottom: 40px;
+    justify-content: center;
+    
+    position: relative;
+    font-family: '맑은 고딕';
+    padding: 20px;
+    width: 700px; /* Change width to 100% to fill available space */
+    max-width: 1200px; /* Optional: Set a maximum width for the calendar section */
+}
+
+/* Custom Calendar Styles */
+.react-calendar {
+    width: 100%;
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 4px 2px 10px 0px rgba(0, 0, 0, 0.13);
+    padding: 3% 5%;
+    background-color: white;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 전체 폰트 컬러 */
+.react-calendar__month-view {
+    abbr {
+        color: #000000;
+    }
+}
+
+/* 네비게이션 가운데 정렬 */
+.react-calendar__navigation {
+    display: flex;                      /* Flexbox for navigation */
+    justify-content: center;            /* Center the navigation */
+    align-items: center;                /* Center items vertically */
+}
+
+/* 네비게이션 폰트 설정 */
+.react-calendar__navigation button {
+    font-weight: 800;
+    font-size: 1rem;
+    text-align: center;
+}
+
+/* 네비게이션 버튼 컬러 */
+.react-calendar__navigation button:focus {
+    background-color: white;
+}
+
+/* 네비게이션 비활성화 됐을때 스타일 */
+.react-calendar__navigation button:disabled {
+    background-color: white;
+    color: #000000;
+}
+
+
+/* 일요일에만 빨간 폰트 */
+.react-calendar__month-view__weekdays__weekday--weekend abbr[title="일요일"] {
+    color: #fb2e2e;
+}
+
+/* 오늘 날짜 폰트 컬러 */
+.react-calendar__tile--now {
+    background: none;
+    abbr {
+        color: #f7a8c5;
+    }
+}
+.react-calendar__month-view__weekdays {
+    display: flex;                      /* Use flexbox for weekdays */
+    justify-content: center;            /* Center the weekdays */
+    align-items: center;                /* Align weekdays vertically */
+    height: 40px;                      /* Consistent height for weekdays */
+}
+
+.react-calendar__month-view__weekdays abbr {
+    text-decoration: none;               /* Remove underline */
+    font-weight: 800;                   /* Bold font */
+    flex: 1;                            /* Allow abbr to take up available space */
+    text-align: center;                 /* Center the text */
+    display: flex;                      /* Use flex for alignment */
+    align-items: center;                /* Center vertically */
+    justify-content: center;            /* Center horizontally */
+}
+
+
+/* 네비게이션 월 스타일 적용 */
+.react-calendar__year-view__months__month {
+    border-radius: 0.8rem;
+    background-color: #000000;
+    padding: 0;
+}
+
+/* 네비게이션 현재 월 스타일 적용 */
+.react-calendar__tile--hasActive {
+    background-color: #000000;
+    abbr {
+        color: #f7a8c5;
+    }
+}
+
+/* 일 날짜 간격 */
+.react-calendar__tile {
+    display: flex;                      /* Use flexbox for alignment */
+    justify-content: center;            /* Center the date horizontally */
+    align-items: center;                /* Center the date vertically */
+    height: 70px;                       /* Set a fixed height for uniformity */
+    width: 70px;                        /* Set a fixed width for uniformity */
+    margin: 0;                         /* Remove any margin */
+    padding: 0;                        /* Remove padding to avoid misalignment */
+    border-radius: 0.3rem;             /* Rounded corners for button effect */
+    cursor: pointer;                    /* Cursor as pointer for button effect */
+    background-color: transparent;      /* Background color, change on hover */
+    transition: background-color 0.3s;  /* Smooth transition for hover effects */
+}
+
+.react-calendar__month-view__days {
+    display: flex;                      /* Make the days container a flexbox */
+    flex-wrap: wrap;                   /* Allows wrapping for multiple rows */
+    align-items: center;                /* Align items vertically */
+}
+
+.react-calendar__navigation__label {
+    flex-grow: 0 !important;
+    text-align: center;
+    align-items: center;
+}
+  
+/* 네비게이션 월 스타일 적용 */
+.react-calendar__year-view__months__month {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #000000;
+}
+
+/* 선택한 날짜 스타일 적용 */
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus,
+.react-calendar__tile--active {
+    background-color: #f8f8f8f3;
+    border-radius: 0.3rem;
+}
+.react-calendar button[type="button"] {
+    padding: 10px;                        /* Remove padding */
+    background-color: transparent;     /* Keep the background transparent */
+    color: #000000;                    /* Maintain the text color */
+    border: none;                      /* Optional: Remove border if present */
+    cursor: pointer;                   /* Change cursor to pointer */
+    text-align: center;                /* Center text */
+    position: relative;
+}
+
+.react-calendar .dot-container {
+    position: absolute; /* Position circles absolutely */
+    bottom: 13px; /* Adjust based on your needs */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Center correction */
+    display: flex; /* Use flexbox to arrange dots */
+    gap: 2px; /* Space between dots */
+}
+.react-calendar .dot {
+    background-color: #f03382; /* Color for the dot */
+    border-radius: 50%; /* Make it a circle */
+    width: 7px; /* Circle width */
+    height: 7px; /* Circle height */
+}

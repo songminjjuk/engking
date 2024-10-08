@@ -1,3 +1,4 @@
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "18.26.6"
@@ -14,17 +15,23 @@ module "eks" {
 
   eks_managed_node_groups = {
     pri-cluster-nodegroups = {
-        min_size = 2
-        max_size = 8
-        desired_size = 2
-        instance_types = ["t3a.small"]
 
+      min_size = 3
+      max_size = 4
+      desired_size = 3
+      instance_types = ["m5.xlarge"]
+      ###
+      # labels = {
+      #   "node" = "large" # 레이블 추가
+      # }
     }
   }
   cluster_endpoint_private_access = true
 }
 
-# #svc 생성을 위한 webhook 포트(9443) 추가
+
+
+# svc 생성을 위한 webhook 포트(9443) 추가
 resource "aws_security_group_rule" "allow_9443" {
   type        = "ingress"
   from_port   = 9443
@@ -35,7 +42,7 @@ resource "aws_security_group_rule" "allow_9443" {
   security_group_id = module.eks.node_security_group_id
 }
 
-# #생성된 파드들이 rds에 접근 가능하도록 아웃바운드 3306 허용
+# 생성된 파드들이 rds에 접근 가능하도록 아웃바운드 3306 허용
 resource "aws_security_group_rule" "allow_3306" {
   type        = "egress"
   from_port   = 3306
@@ -59,7 +66,7 @@ resource "aws_security_group_rule" "allow_3306" {
 data "aws_eks_cluster_auth" "this" {
   name = "pri-cluster"
 }
-# # pri-cluster라는 name을 갖는 클러스터의 인증정보를 가져옴.
+# pri-cluster라는 name을 갖는 클러스터의 인증정보를 가져옴
 
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
@@ -68,7 +75,7 @@ provider "kubernetes" {
   
 }
 
-# # eks 클러스터와 api 통신 및 리소스 관리하기 위한 프로바이더
+# eks 클러스터와 api 통신 및 리소스 관리하기 위한 프로바이더
 
 provider "helm" {
   kubernetes {
@@ -78,9 +85,9 @@ provider "helm" {
   }
 }
 
-# # 로드밸런서 컨트롤러 설치
+# 로드밸런서 컨트롤러 설치
 
-# # 로컬 변수 선언
+# 로컬 변수 선언
 
 locals {
   lb_controller_iam_role_name        = "eks-aws-lb-ctrl"
@@ -88,7 +95,7 @@ locals {
 }
 
 
-# # IAM ROLE 생성 및 OIDC를 통해 EKS의 SA와 연결(신뢰할 수 있는 엔터티에 등록)
+# IAM ROLE 생성 및 OIDC를 통해 EKS의 SA와 연결(신뢰할 수 있는 엔터티에 등록)
 
 module "lb_controller_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
@@ -208,7 +215,6 @@ resource "kubernetes_service_account" "secret-sa" {
   }
 }
 
-# # 정책과 롤을 바인딩. 시크릿을 조회하고 값을 가져올 수 있게!
 
 resource "aws_iam_role_policy" "irsa_secret_role_policy" {
   name = "secrets_access_policy"
@@ -257,64 +263,162 @@ resource "helm_release" "secrets-provider-aws" {
 
 
 resource "kubernetes_ingress_v1" "alb" {
-
   metadata {
-    name = "fast-ingress"
+    name      = "alb-ingress"
     namespace = "default"
-    
 
     annotations = {
-      "alb.ingress.kubernetes.io/load-balancer-name" = "fast-alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-      "alb.ingress.kubernetes.io/group.name" = "min-alb-group"
-      # "alb.ingress.kubernetes.io/healthcheck-path" = "/api/health"
+      "alb.ingress.kubernetes.io/actions.ssl-redirect"  = jsonencode({
+        "Type"          = "redirect"
+        "RedirectConfig" = {
+          "Protocol"  = "HTTPS"
+          "Port"      = "443"
+          "StatusCode" = "HTTP_301"
+        }
+      })
+      "alb.ingress.kubernetes.io/certificate-arn"        = "arn:aws:acm:ap-northeast-1:355627705292:certificate/80ca62e7-7c66-40ec-a710-a4e8bcadfdb7"
+      "alb.ingress.kubernetes.io/group.name"             = "engking-backends"
+      "alb.ingress.kubernetes.io/healthcheck-path"       = "/status"
+      "alb.ingress.kubernetes.io/listen-ports"           = "[{\"HTTP\":80,\"HTTPS\":443}]"
+      "alb.ingress.kubernetes.io/load-balancer-name"     = "app-alb"
+      "alb.ingress.kubernetes.io/scheme"                 = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"            = "ip"
     }
   }
+
   spec {
     ingress_class_name = "alb"
+
+    # SSL Redirect Rule
     rule {
       http {
         path {
           backend {
             service {
-              name = "svc-front"
+              name = "ssl-redirect"
               port {
-                number = 3000
+                name = "use-annotation"
               }
             }
           }
-          path = "/front"
+          path      = "/"
           path_type = "Prefix"
         }
+      }
+    }
+
+    # j-back-service Rule
+    rule {
+      host = "jback.engking.site"
+      http {
         path {
           backend {
             service {
-              name = "svc-back"
+              name = "j-back-service"
               port {
                 number = 8080
               }
             }
           }
-          path = "/back"
+          path      = "/"
           path_type = "Prefix"
         }
+      }
+    }
+
+    # s-back-service Rule
+    rule {
+      host = "sback.engking.site"
+      http {
         path {
           backend {
             service {
-              name = "svc-langchain"
+              name = "s-back-service"
+              port {
+                number = 8080
+              }
+            }
+          }
+          path      = "/"
+          path_type = "Prefix"
+        }
+      }
+    }
+
+    # n-back-service Rule
+    rule {
+      host = "nback.engking.site"
+      http {
+        path {
+          backend {
+            service {
+              name = "n-back-service"
+              port {
+                number = 8000
+              }
+            }
+          }
+          path      = "/"
+          path_type = "Prefix"
+        }
+      }
+    }
+
+    # langchain-service Rule
+    rule {
+      host = "langchain.engking.site"
+      http {
+        path {
+          backend {
+            service {
+              name = "langchain-service"
               port {
                 number = 5000
               }
             }
           }
-          path = "/langchain"
+          path      = "/"
           path_type = "Prefix"
         }
       }
     }
+
+    # kibana-svc Rule
+    rule {
+      http {
+        path {
+          backend {
+            service {
+              name = "kibana-svc"
+              port {
+                number = 5601
+              }
+            }
+          }
+          path      = "/"
+          path_type = "Prefix"
+        }
+      }
+    }
+    # rule {
+    #   http {
+    #     path {
+    #       backend {
+    #         service {
+    #           name = "elasticsearch-svc"
+    #           port {
+    #             number = 9200
+    #           }
+    #         }
+    #       }
+    #       path      = "/"
+    #       path_type = "Prefix"
+    #     }
+    #   }
+    # }
   }
 }
+
 
 # resource "kubernetes_service_v1" "svc-fast" {
 #   metadata {
@@ -326,7 +430,7 @@ resource "kubernetes_ingress_v1" "alb" {
 #       app = "fast"
 #     }
 #     session_affinity = "ClientIP"
-#     # 동일한 아이피를 갖는 클라이언트는 동일한 pod에 연결시켜줌
+#     # 동일한 아이피를 갖는 클라이언트는 동일한 pod에 연결시켜주는듯
 #     port {
 #       port        = 80
 #       target_port = 8000
@@ -345,7 +449,7 @@ resource "kubernetes_ingress_v1" "alb" {
 # #   parameters:
 # #     objects: |
 # #         - objectName: "arn:aws:secretsmanager:ap-northeast-2:865577889736:secret:dev/rds-rftU0T"
-# # 시크릿매니저의 시크릿을 가져다 쓸 수 있게 해줌.
+# # 시크릿매니저의 시크릿을 가져다 쓸 수ㅇ ㅣㅆ게
 
 # resource "kubernetes_manifest" "aws_secrets_provider_class" {
 #   depends_on = [ helm_release.lbc ]
