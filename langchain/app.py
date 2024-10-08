@@ -2,8 +2,9 @@ from fastapi import FastAPI
 from routes import chat_routes, quiz_routes, evaluate_routes
 import uvicorn
 from config import settings
-from loguru import logger
 import time
+from loguru import logger
+import logging  
 
 app = FastAPI()
 
