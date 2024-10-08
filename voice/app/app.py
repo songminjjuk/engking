@@ -57,9 +57,4 @@ async def http_exception_handler(request: Request, e: HTTPException):
     # 요청 처리 시간 기록
     end_time = time.time()
     duration = (end_time - start_time) * 1000  # 밀리초로 변환
-    logger.info(f"HTTPException occurred: {str(e.detail)}, duration={duration:.2f}ms")
-
-    return JSONResponse(
-        status_code=e.status_code,
-        content={"success": False, "message": e.detail},
-    )
+    logger.error(f"HTTPException occurred: {str(e.detail)}, duration={duration:.2f}ms")
