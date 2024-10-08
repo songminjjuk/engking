@@ -1,5 +1,6 @@
 .conv-page {
     display: flex;
+    align-items: center;
     flex-direction: column;
     height: 100vh;
     padding: 20px;
@@ -13,8 +14,10 @@
     flex: 1;
     overflow-y: auto;
     margin-bottom: 20px; /* Space for buttons */
-    margin-left: 20px;
-    margin-right: 20px;
+    /* margin-left: 20px;
+    margin-right: 20px; */
+    width: 60%;
+    padding: 40px;
 }
 
 .conv-message {
@@ -22,18 +25,30 @@
     flex-direction: column;
     align-items: flex-start;
     margin-bottom: 20px;
-    max-width: 80%;
+    max-width: 70%;
     position: relative;
 }
 
 .conv-character-message {
-    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Aligns everything to the left */
+    margin-bottom: 20px;
+    max-width: 70%; /* Optional: Control the width of the message */
+    position: relative;
+}
+.conv-character-message audio {
+    /* margin-top: 5px; */
+    height: 40px;
+    width: 100%; /* Full width of the container */
+    max-width: 300px; /* Limit the maximum width of the audio player */
+    align-self: left; /* Ensures it stays aligned to the left */
 }
 
 .conv-character-image {
     width: 80px;
     height: auto;
-    margin-right: 10px;
+    /* margin-right: 10px; */
 }
 
 /* User response message styling */
@@ -146,12 +161,12 @@
 }
 
 .conv-audio-player {
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto;
-    display: block;
-    border-radius: 10px;
-    background-color: transparent;
+    width: 100%;          /* Full width of the container */
+    max-width: 300px;    /* Maximum width set to 300px */
+    /* margin: 10px 0 0 0;  Add top margin for spacing, remove auto horizontal centering */
+    display: block;       /* Keep display as block for proper alignment */
+    border-radius: 10px;  /* Rounded corners */
+    background-color: transparent; /* Keep the background transparent */
 }
 .audio-player {
     display: flex;

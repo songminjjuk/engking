@@ -73,17 +73,19 @@ const ConversationPage = () => {
 
     const uploadToS3 = async (mp3Blob) => {
         try {
+            // Construct the file name
             const fileName = `${userId}/${chatRoomId}/${Number(messageId) + 1}.mp3`;
+
             setFileName(fileName);
-            console.log("File Name:", fileName);
-            console.log("Blob size:", mp3Blob.size);
+            // console.log("File Name:", fileName);
+            // console.log("Blob size:", mp3Blob.size);
     
             // Get a presigned URL from the server
             const presignedResponse = await axios.post('https://nback.engking.site/api/create-put-url/', {
-                filename: 'test',
-                // header: {
-                //     "Content-Length": String(mp3Blob.size),  // Provide the correct content length
-                // },
+                filename: fileName, // Use the constructed filename
+                header: {
+                    "Content-Type": 'audio/mpeg', // Ensure correct content type
+                },
             });
     
             const { presignedUrl, success } = presignedResponse.data;
@@ -91,35 +93,36 @@ const ConversationPage = () => {
                 throw new Error('Failed to get presigned URL from the server');
             }
     
-            console.log("Presigned URL:", presignedUrl);
-    
-            // Convert the mp3Blob into a File object
-            const audioFile = new File([mp3Blob], fileName, { type: 'audio/mp3' });
-            console.log("Audio File Type:", audioFile.type);
-    
+            // console.log("Presigned URL:", presignedUrl);
+            const httpUrl = presignedUrl.split('?')[0].replace('https:', '')
+            
             // Upload the MP3 to S3 using the presigned URL
-            const uploadResponse = await fetch(presignedUrl, {
-                method: 'PUT',
-                // headers: {  // Fix header to headers
-                //     "Content-Type": 'audio/mp3',  // Ensure proper Content-Type
-                //     "Content-Length": String(mp3Blob.size),  // Add correct size
-                // },
-                body: 'test',  // Pass the File object as the body
-            });
-            console.log(uploadResponse.httpResponse);
+            // const uploadResponse = await fetch(presignedUrl, {
+            //     method: 'PUT',
+            //     headers: {
+            //         "Content-Type": 'audio/mpeg', // Ensure proper Content-Type
+            //         "Content-Length": String(mp3Blob.size), // Correct content length
+            //     },
+            //     body: mp3Blob, // Pass the mp3Blob directly as the body
+            // });
+            const uploadResponse = await axios.put(
+                httpUrl, mp3Blob, {
+                    headers: {
+                        'Content-Type': 'audio/mpeg', 
+                    }
+                } 
+            );
     
-            console.log('Upload Response Status:', uploadResponse.status);
+            // console.log('Upload Response Status:', uploadResponse.status);
     
-            if (!uploadResponse.ok) {
-                throw new Error(`Upload failed with status ${uploadResponse.status}`);
-            }
+            // if (!uploadResponse.ok) {
+            //     throw new Error(`Upload failed with status ${uploadResponse.status}`);
+            // }
     
             // Return the file URL (without query parameters)
             return presignedUrl.split('?')[0];
         } catch (error) {
             console.error('Error uploading file to S3:', error);
-            console.log(this.request.httpResponse);
-            console.log(this.httpResponse);
             throw error;
         }
     };
@@ -133,14 +136,14 @@ const ConversationPage = () => {
                 const audioBlob = await response.blob();
                 const mp3Blob = new Blob([audioBlob], { type: 'audio/mp3' }); // Use the same blob
                 const s3Url = await uploadToS3(mp3Blob);
-
+                
                 if (!s3Url) {
                     throw new Error('Failed to upload audio to S3');
                 }
-                console.log(s3Url);
+                // console.log(s3Url);
                 const tmp = `${userId}/${chatRoomId}/${Number(messageId) + 1}.mp3`;
-                console.log("response",audioUrl);
-                console.log(tmp);
+                // console.log("response",audioUrl);
+                // console.log(tmp);
                 const responseNextQuestion = await axios.post('https://nback.engking.site/api/next-question/', {
                     memberId: String(localStorage.getItem('userId')),
                     chatRoomId: String(chatRoomId), // Use existing chatRoomId from state
@@ -151,13 +154,13 @@ const ConversationPage = () => {
                 });
     
                 const { success, nextQuestion, audioUrl: newAudioUrl, chatRoomId: newChatRoomId, messageId: newMessageId } = responseNextQuestion.data;
-    
+                console.log(newAudioUrl);
                 if (success) {
                     setQuestions(prevQuestions => [...prevQuestions, { text: '  ' + nextQuestion, audioUrl: newAudioUrl }]);
                     setUserResponseAudioUrl(s3Url);
                     setChatRoomId(newChatRoomId); // Update with the new chatRoomId
                     setMessageId(newMessageId); // Update with the new messageId
-                    setAudioUrl(newAudioUrl);
+                    setQuestionAudioUrl(newAudioUrl);
                     setQuestionIndex(prevIndex => prevIndex + 1);
                     setCurrentText('');
                     setIsRecording(false);
@@ -182,13 +185,14 @@ const ConversationPage = () => {
             const response = await axios.post('https://nback.engking.site/api/feedback/', {
                 memberId: userId,
                 chatRoomId: chatRoomId,
-                messageId: messageId,
-                responseText: ""
+                messageId: String(Number(messageId) + 1),
+                responseText: " " // Ensure this is properly filled if needed
             });
     
-            const { messageId, success, feedback, score, audioUrl } = response.data;
+            const { messageId: newMessageId, success, feedback, score, audioUrl } = response.data;
+    
             if (success) {
-                setFeedbackResponse({ feedback: feedback, score, audioUrl });
+                setFeedbackResponse({ feedback, score, audioUrl });
     
                 // Navigate to convresult with feedback and additional data
                 navigate('/convresult', {
@@ -197,7 +201,6 @@ const ConversationPage = () => {
                         difficulty: difficulty,
                         feedback: feedback,
                         score: score,
-                        // endQuestion: endQuestion,
                         audioFileUrl: audioUrl
                     }
                 });
@@ -208,6 +211,7 @@ const ConversationPage = () => {
             console.error('Error submitting feedback:', error);
         }
     };
+    
 
     const handleMicClick = () => {
         if (!isRecording) {
@@ -298,15 +302,16 @@ const ConversationPage = () => {
                         />
                         <div className="conv-message-content">
                             <span>{`Q${index + 1}. ${index < questionIndex ? question.text : (index === questionIndex ? currentText : '')}`}</span>
-                            {questionAudioUrl && index === questionIndex && (
+                            
+                        </div>
+                        {questionAudioUrl && index === questionIndex && (
                                 <div className="conv-audio-player">
                                     <audio controls src={questionAudioUrl}></audio>
                                 </div>
                             )}
-                        </div>
                     </div>
                 ))}
-                {!loading && <Loading loading={loading} />}
+                {loading && <Loading loading={loading} />}
                 {questionIndex < questions.length && typingFinished && (
                     <div className="conv-message conv-user-message">
                         <img
@@ -324,13 +329,7 @@ const ConversationPage = () => {
                                 </button>
                                 {audioUrl && (
                                     <div className="conv-audio-player">
-                                        <h3>Your Recording:</h3>
-                                        <button
-                                            className="conv-button"
-                                            onClick={handleDownload}
-                                        >
-                                            Download
-                                        </button>
+                                        <h4>Your Recording:</h4>
                                         <audio controls src={audioUrl}></audio>
                                     </div>
                                 )}

@@ -24,7 +24,6 @@ function EditInfoPage() {
         try {
           const response = await axios.post(`https://sback.engking.site/member/info?email=${storedEmail}`);
   
-          console.log('Response Data:', response.data);
   
           if (response.data) {
             setName(response.data.name || '');
@@ -75,7 +74,7 @@ function EditInfoPage() {
   
       if (response.status === 200) {
         const { profileImgUrl } = response.data;
-        console.log('Profile updated, S3 URL:', profileImgUrl);
+        // console.log('Profile updated, S3 URL:', profileImgUrl);
   
         if (profileImgUrl && imageFile) {
           await axios.put(profileImgUrl, imageFile, {

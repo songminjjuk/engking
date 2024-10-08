@@ -10,14 +10,24 @@
     align-items: center;
     z-index: 1000;
 }
-  
+.modal-content p {
+    font-size: 1.25rem;
+    color: #181717;
+    margin: 5px 0;
+    text-align: left; /* Align text to the left */
+    width: 100%; /* Ensure paragraphs use full width */
+    margin-bottom: 10px;
+}
 .modal-content {
     background-color: #fff;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     max-width: 800px;
+    overflow-y: auto;
+    max-height: 80vh;
     width: 100%;
+    margin-bottom: 15px;
     position: relative;
     display: flex; /* Added flexbox */
     flex-direction: column; /* Column direction */

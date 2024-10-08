@@ -18,13 +18,11 @@ const Title = (props) => {
             <h2 className="title-heading">선택한 난이도: {difficulty}</h2> {/* Display the selected difficulty */}
             <div className="button-grid">
                 <button className="title-button" onClick={() => handleTitleClick('travel')}>여행</button>
-                <button className="title-button" onClick={() => handleTitleClick('마트')}>마트</button>
                 <button className="title-button" onClick={() => handleTitleClick('movie')}>영화</button>
                 <button className="title-button" onClick={() => handleTitleClick('hamburger')}>음식</button>
                 <button className="title-button" onClick={() => handleTitleClick('music')}>음악</button>
                 <button className="title-button" onClick={() => handleTitleClick('meeting')}>회의</button>
                 <button className="title-button" onClick={() => handleTitleClick('coffee')}>커피</button>
-                <button className="title-button" onClick={() => handleTitleClick('교육')}>교육</button>
             </div>
         </div>
     );

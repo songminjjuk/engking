@@ -47,6 +47,7 @@ const SignUp = () => {
       });
   
       // Handle successful response
+      alert('회원가입이 완료되었습니다 !');
       console.log('Success:', response.data);
       navigate('/Login'); // Redirect to login page on success
     } catch (error) {
