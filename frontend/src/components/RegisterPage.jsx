@@ -38,7 +38,7 @@ const SignUp = () => {
   
     try {
       // 프록시 설정을 고려하여 상대 경로로 요청
-      const response = await axios.post('http://35.72.9.14:8080/member/register', {
+      const response = await axios.post('https://sback.engking.site/member/register', {
         email: formData.email,
         password: formData.password,
         name: formData.name,
@@ -47,6 +47,7 @@ const SignUp = () => {
       });
   
       // Handle successful response
+      alert('회원가입이 완료되었습니다 !');
       console.log('Success:', response.data);
       navigate('/Login'); // Redirect to login page on success
     } catch (error) {

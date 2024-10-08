@@ -5,7 +5,7 @@ import MicRecorder from 'mic-recorder-to-mp3';
 import bbongssoon from '../assets/img/bbongssoon.jpg';
 import usagi from '../assets/img/농담곰.jpeg';
 import '../assets/css/conv.css';
-
+import Loading from './Loading';
 
 const ConversationPage = () => {
     const location = useLocation();
@@ -22,16 +22,17 @@ const ConversationPage = () => {
     const [messageId, setMessageId] = useState('');
     const [feedback, setFeedback] = useState('');
     const [feedbackResponse, setFeedbackResponse] = useState(null);
+    const [loading, setLoading] = useState(false); // Add loading state
     const typingInterval = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const questionsFetched = useRef(false);
     const userId = localStorage.getItem('userId');
     const recorder = useRef(new MicRecorder({ bitRate: 128 }));
-
+    const [fileName, setFileName] = useState('');
     const [questionAudioUrl, setQuestionAudioUrl] = useState('');
     const [userResponseAudioUrl, setUserResponseAudioUrl] = useState('');
-    console.log(userId);
+
     useEffect(() => {
         if (title && difficulty && userId && !questionsFetched.current) {
             fetchFirstQuestion();
@@ -45,20 +46,19 @@ const ConversationPage = () => {
                 throw new Error('User ID is not available.');
             }
 
-            const response = await axios.post('http://13.115.48.150:8080/chat/firstquestion', {
+            const response = await axios.post('https://nback.engking.site/api/first-question/', {
                 memberId: userId,
                 topic: title,
                 difficulty: difficulty
             });
 
-            const { success, firstQuestion, audioFileUrl, chatRoomId, messageId } = response.data;
+            const { success, firstQuestion, audioUrl, chatRoomId, messageId } = response.data;
             if (success) {
-                setQuestions([{ text: '  ' + firstQuestion, audioFileUrl }]);
-                setQuestionAudioUrl(audioFileUrl);
+                setQuestions([{ text: '  ' + firstQuestion, audioUrl }]);
+                setQuestionAudioUrl(audioUrl);
                 setChatRoomId(chatRoomId);
                 setMessageId(messageId);
                 setTypingFinished(false);
-                console.log(audioFileUrl);
             } else {
                 console.error('Failed to fetch the first question.');
             }
@@ -71,70 +71,98 @@ const ConversationPage = () => {
         }
     };
 
-
-
     const uploadToS3 = async (mp3Blob) => {
         try {
-            const fileName = `audio_${new Date().getTime()}.mp3`;
+            // Construct the file name
+            const fileName = `${userId}/${chatRoomId}/${Number(messageId) + 1}.mp3`;
 
+            setFileName(fileName);
+            // console.log("File Name:", fileName);
+            // console.log("Blob size:", mp3Blob.size);
+    
             // Get a presigned URL from the server
-            const presignedResponse = await axios.post('http://13.115.48.150:8080/audio/uploadurl', {
-                chatRoomId: chatRoomId,
-                memberId: localStorage.getItem('userId'),
-                messageId: String(Number(messageId) + 1)
+            const presignedResponse = await axios.post('https://nback.engking.site/api/create-put-url/', {
+                filename: fileName, // Use the constructed filename
+                header: {
+                    "Content-Type": 'audio/mpeg', // Ensure correct content type
+                },
             });
-
-            const { audioFileUrl, success } = presignedResponse.data;
+    
+            const { presignedUrl, success } = presignedResponse.data;
             if (!success) {
                 throw new Error('Failed to get presigned URL from the server');
             }
-            const preSignedUrl = audioFileUrl;
-
+    
+            // console.log("Presigned URL:", presignedUrl);
+            const httpUrl = presignedUrl.split('?')[0].replace('https:', '')
+            
             // Upload the MP3 to S3 using the presigned URL
-            const uploadResponse = await axios.put(preSignedUrl, mp3Blob, {
-                headers: {
-                    'Content-Type': 'audio/mp3',
-                },
-            });
-
-            console.log('Upload Response Status:', uploadResponse.status);
-
-            return preSignedUrl.split('?')[0];
+            // const uploadResponse = await fetch(presignedUrl, {
+            //     method: 'PUT',
+            //     headers: {
+            //         "Content-Type": 'audio/mpeg', // Ensure proper Content-Type
+            //         "Content-Length": String(mp3Blob.size), // Correct content length
+            //     },
+            //     body: mp3Blob, // Pass the mp3Blob directly as the body
+            // });
+            const uploadResponse = await axios.put(
+                httpUrl, mp3Blob, {
+                    headers: {
+                        'Content-Type': 'audio/mpeg', 
+                    }
+                } 
+            );
+    
+            // console.log('Upload Response Status:', uploadResponse.status);
+    
+            // if (!uploadResponse.ok) {
+            //     throw new Error(`Upload failed with status ${uploadResponse.status}`);
+            // }
+    
+            // Return the file URL (without query parameters)
+            return presignedUrl.split('?')[0];
         } catch (error) {
             console.error('Error uploading file to S3:', error);
             throw error;
         }
     };
-
+    
     const handleNextQuestion = async () => {
         if (audioUrl) {
+            setLoading(true); // Set loading state to true before making the request
             try {
                 // Upload audio file to S3
                 const response = await fetch(audioUrl);
                 const audioBlob = await response.blob();
                 const mp3Blob = new Blob([audioBlob], { type: 'audio/mp3' }); // Use the same blob
                 const s3Url = await uploadToS3(mp3Blob);
-
+                
                 if (!s3Url) {
                     throw new Error('Failed to upload audio to S3');
                 }
-
-                const responseNextQuestion = await axios.post('http://13.115.48.150:8080/chat/nextquestion', {
-                    memberId: localStorage.getItem('userId'),
-                    chatRoomId: chatRoomId,
+                // console.log(s3Url);
+                const tmp = `${userId}/${chatRoomId}/${Number(messageId) + 1}.mp3`;
+                // console.log("response",audioUrl);
+                // console.log(tmp);
+                const responseNextQuestion = await axios.post('https://nback.engking.site/api/next-question/', {
+                    memberId: String(localStorage.getItem('userId')),
+                    chatRoomId: String(chatRoomId), // Use existing chatRoomId from state
                     messageId: String(Number(messageId) + 1),
+                    filename: tmp,
                     topic: title,
                     difficulty: difficulty
                 });
-
-                const { success, nextQuestion, audioUrl: newAudioUrl, messageId: newMessageId } = responseNextQuestion.data;
+    
+                const { success, nextQuestion, audioUrl: newAudioUrl, chatRoomId: newChatRoomId, messageId: newMessageId } = responseNextQuestion.data;
+                console.log(newAudioUrl);
                 if (success) {
-                    setQuestions(prevQuestions => [...prevQuestions, { text: nextQuestion, audioUrl: newAudioUrl }]);
+                    setQuestions(prevQuestions => [...prevQuestions, { text: '  ' + nextQuestion, audioUrl: newAudioUrl }]);
                     setUserResponseAudioUrl(s3Url);
-                    setMessageId(newMessageId);
+                    setChatRoomId(newChatRoomId); // Update with the new chatRoomId
+                    setMessageId(newMessageId); // Update with the new messageId
+                    setQuestionAudioUrl(newAudioUrl);
                     setQuestionIndex(prevIndex => prevIndex + 1);
                     setCurrentText('');
-                    setAudioUrl(null);
                     setIsRecording(false);
                     setTypingFinished(false);
                 } else {
@@ -142,6 +170,8 @@ const ConversationPage = () => {
                 }
             } catch (error) {
                 console.error('Error processing the next question:', error);
+            } finally {
+                setLoading(false); // Set loading state to false after request completes
             }
         }
     };
@@ -152,26 +182,26 @@ const ConversationPage = () => {
                 throw new Error('Required data is missing.');
             }
     
-            const response = await axios.post('http://13.115.48.150:8080/chat/endquestion', {
+            const response = await axios.post('https://nback.engking.site/api/feedback/', {
                 memberId: userId,
                 chatRoomId: chatRoomId,
-                messageId: messageId,
-                endRequest: true
+                messageId: String(Number(messageId) + 1),
+                responseText: " " // Ensure this is properly filled if needed
             });
     
-            const { success, feedback: responseFeedback, score, endQuestion, audioFileUrl } = response.data;
+            const { messageId: newMessageId, success, feedback, score, audioUrl } = response.data;
+    
             if (success) {
-                setFeedbackResponse({ feedback: responseFeedback, score, endQuestion, audioFileUrl });
+                setFeedbackResponse({ feedback, score, audioUrl });
     
                 // Navigate to convresult with feedback and additional data
                 navigate('/convresult', {
                     state: {
                         title: title,
                         difficulty: difficulty,
-                        feedback: responseFeedback,
+                        feedback: feedback,
                         score: score,
-                        endQuestion: endQuestion,
-                        audioFileUrl: audioFileUrl
+                        audioFileUrl: audioUrl
                     }
                 });
             } else {
@@ -272,14 +302,16 @@ const ConversationPage = () => {
                         />
                         <div className="conv-message-content">
                             <span>{`Q${index + 1}. ${index < questionIndex ? question.text : (index === questionIndex ? currentText : '')}`}</span>
-                            {question.audioFileUrl && index === questionIndex && (
+                            
+                        </div>
+                        {questionAudioUrl && index === questionIndex && (
                                 <div className="conv-audio-player">
-                                    <audio controls src={question.audioFileUrl}></audio>
+                                    <audio controls src={questionAudioUrl}></audio>
                                 </div>
                             )}
-                        </div>
                     </div>
                 ))}
+                {loading && <Loading loading={loading} />}
                 {questionIndex < questions.length && typingFinished && (
                     <div className="conv-message conv-user-message">
                         <img
@@ -297,20 +329,14 @@ const ConversationPage = () => {
                                 </button>
                                 {audioUrl && (
                                     <div className="conv-audio-player">
-                                        <h3>Your Recording:</h3>
-                                        <button
-                                            className="conv-button"
-                                            onClick={handleDownload}
-                                        >
-                                            Download
-                                        </button>
+                                        <h4>Your Recording:</h4>
                                         <audio controls src={audioUrl}></audio>
                                     </div>
                                 )}
                                 <button
                                     className="conv-button"
                                     onClick={handleNextQuestion}
-                                    disabled={!audioUrl}
+                                    disabled={!audioUrl || loading} // Disable button when loading
                                 >
                                     Next
                                 </button>

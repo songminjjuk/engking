@@ -25,17 +25,18 @@ const Footer = ( props ) => {
                     </div>
 
                     <div>
-                        <h3>~10/18</h3>
+                        <h3>🥱</h3>
                     </div>
                     <div>
-                        <h3>언제 끝나 </h3>
+                        <h3>🥱</h3>
                     </div>
                     <div>
-                        <h3>집 가고 싶당</h3>
+                        <h3>🥱</h3>
                     </div>
                     <div>
-                        <h3>푸항항항 ~ 🥱</h3>
+                        <h3>🥱</h3>
                     </div>
+                    
                 </div> 
                 <div className="footer__right">
                     2024 AWS 5기 이쿠조<br />All rights reserved.

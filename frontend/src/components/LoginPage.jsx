@@ -16,20 +16,23 @@ const LoginPage = ({ reload, setReload }) => {
 
   // Handler for form input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked: value,
     });
   };
 
   // Handler for form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+    if (!formData.terms) {
+      setErrorMessage('You must agree to the terms and conditions to log in.');
+      return; // Prevent form submission if terms are not accepted
+  }
     try {
       // Make API request to the login endpoint
-      const response = await axios.post('http://35.72.9.14:8080/member/login', {
+      const response = await axios.post('https://sback.engking.site/member/login', {
         email: formData.email,
         password: formData.password,
       });
@@ -101,18 +104,18 @@ const LoginPage = ({ reload, setReload }) => {
               Sign Up
             </button>
           </div>
-
-          <input type="checkbox" name="terms" id="terms" />
-          <label htmlFor="terms">
-            I agree to the{' '}
-            <a href="#" className="termsLink">
-              Terms of service
-            </a>{' '}and{' '}
-            <a href="#" className="termsLink">
-              Privacy Policy
-            </a>
-            .
-          </label>
+          <input
+              type="checkbox"
+              name="terms"
+              id="terms"
+              checked={formData.terms}
+              onChange={handleChange}
+            />
+            <label htmlFor="terms">
+              I agree to the{' '}
+              <a href="#" className="termsLink">Terms of service</a> and{' '}
+              <a href="#" className="termsLink">Privacy Policy</a>.
+            </label>
         </form>
       </div>
     </div>
