@@ -4,9 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 import importlib
-from fastapi.responses import JSONResponse
-import re  # 정규 표현식 모듈 추가
+import logging
+import re
 import time
+from fastapi.responses import JSONResponse
 from loguru import logger
 
 # .env 파일에서 환경 변수 로드
@@ -14,12 +15,10 @@ load_dotenv()
 
 # 특수 문자 확인 함수
 def contains_special_characters(s: str) -> bool:
-    # 정규 표현식으로 특수 문자 확인
     return bool(re.search(r'[^a-zA-Z0-9]', s))
 
 aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 
-# AWS 비밀 키에 특수 문자가 있는지 확인
 if contains_special_characters(aws_secret_access_key):
     print("AWS_SECRET_ACCESS_KEY에 특수 문자가 포함되어 있습니다.")
 else:
@@ -35,6 +34,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Uvicorn 기본 로거 가져오기
+uvicorn_logger = logging.getLogger("uvicorn.access")
+
+# /status 경로에 대한 로그를 필터링할 커스텀 필터 정의
+class StatusLogFilter(logging.Filter):
+    def filter(self, record):
+        return "/status" not in record.getMessage()
+
+# Uvicorn 로거에 필터 추가
+uvicorn_logger.addFilter(StatusLogFilter())
+
 # 라우터 자동 등록
 routers_dir = 'app/routers'
 for filename in os.listdir(routers_dir):
@@ -47,29 +57,3 @@ for filename in os.listdir(routers_dir):
 @app.get("/status")
 async def health_check():
     return {"status": "ok"}
-
-# 전역 예외 핸들러
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, e: HTTPException):
-    # 요청 시작 시각 기록
-    start_time = time.time()
-
-    # 요청 처리 시간 기록
-    end_time = time.time()
-    duration = (end_time - start_time) * 1000  # 밀리초로 변환
-    logger.error(f"HTTPException occurred: {str(e.detail)}, duration={duration:.2f}ms")
-
-# 상태 체크에 대한 예외 처리
-@app.middleware("http")
-async def log_status_middleware(request: Request, call_next):
-    if request.url.path == "/status":
-        response = await call_next(request)
-        if response.status_code != 200:
-            # 문제 발생 시에만 로그 남김
-            start_time = time.time()
-            end_time = time.time()
-            duration = (end_time - start_time) * 1000  # 밀리초로 변환
-            logger.error(f"Status check failed: status={response.status_code}, duration={duration:.2f}ms")
-        return response
-    else:
-        return await call_next(request)
