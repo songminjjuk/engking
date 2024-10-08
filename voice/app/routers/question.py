@@ -86,6 +86,16 @@ async def create_first_question(request: Request, body: FirstQuestionRequest):
             chatRoomId=quiz_response['chatRoomId'],
             messageId=quiz_response['messageId']
         )
+    except HTTPException as e:
+        # 요청 처리 시간 기록
+        end_time = time.time()
+        duration = (end_time - start_time) * 1000
+
+        # 에러 발생 시 로그 기록 (한 줄로, 메시지만 포함)
+        logger.error(f"HTTPException occurred: {str(e.detail)}, duration={duration:.2f}ms")
+
+        # HTTP 예외 처리
+        raise e
     except Exception as e:
         # 요청 처리 시간 기록
         end_time = time.time()
@@ -136,6 +146,16 @@ async def handle_next_question(request: Request, body: NextQuestionRequest):
             messageId=next_question_response['messageId'],
             audioUrl=audio_url
         )
+    except HTTPException as e:
+        # 요청 처리 시간 기록
+        end_time = time.time()
+        duration = (end_time - start_time) * 1000
+
+        # 에러 발생 시 로그 기록 (한 줄로, 메시지만 포함)
+        logger.error(f"HTTPException occurred: {str(e.detail)}, duration={duration:.2f}ms")
+
+        # HTTP 예외 처리
+        raise e
     except Exception as e:
         # 요청 처리 시간 기록
         end_time = time.time()

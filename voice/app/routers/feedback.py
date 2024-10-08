@@ -85,6 +85,16 @@ async def handle_feedback(request: Request, body: FeedbackRequest):
             feedback=feedback,
             audioUrl=audio_presigned_url  # audioUrl 포함
         )
+    except HTTPException as e:
+        # 요청 처리 시간 기록
+        end_time = time.time()
+        duration = (end_time - start_time) * 1000
+
+        # 에러 발생 시 로그 기록 (한 줄로, 메시지만 포함)
+        logger.error(f"HTTPException occurred: {str(e.detail)}, duration={duration:.2f}ms")
+
+        # HTTP 예외 처리
+        raise e
     except Exception as e:
         # 요청 처리 시간 기록
         end_time = time.time()

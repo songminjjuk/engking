@@ -43,6 +43,16 @@ async def create_put_url(request: Request,body: FilenameRequest):
         logger.info(f"Response successful: status=200, duration={duration:.2f}ms")
 
         return {"success": True, "presignedUrl": presigned_url}
+    except HTTPException as e:
+        # 요청 처리 시간 기록
+        end_time = time.time()
+        duration = (end_time - start_time) * 1000
+
+        # 에러 발생 시 로그 기록 (한 줄로, 메시지만 포함)
+        logger.error(f"HTTPException occurred: {str(e.detail)}, duration={duration:.2f}ms")
+
+        # HTTP 예외 처리
+        raise e
     except Exception as e:
         # 요청 처리 시간 기록
         end_time = time.time()
