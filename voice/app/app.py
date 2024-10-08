@@ -6,6 +6,8 @@ import os
 import importlib
 from fastapi.responses import JSONResponse
 import re  # 정규 표현식 모듈 추가
+import time
+from loguru import logger
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
@@ -48,8 +50,16 @@ async def health_check():
 
 # 전역 예외 핸들러
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
+async def http_exception_handler(request: Request, e: HTTPException):
+    # 요청 시작 시각 기록
+    start_time = time.time()
+
+    # 요청 처리 시간 기록
+    end_time = time.time()
+    duration = (end_time - start_time) * 1000  # 밀리초로 변환
+    logger.info(f"HTTPException occurred: {str(e.detail)}, duration={duration:.2f}ms")
+
     return JSONResponse(
-        status_code=exc.status_code,
-        content={"success": False, "message": exc.detail},
+        status_code=e.status_code,
+        content={"success": False, "message": e.detail},
     )
