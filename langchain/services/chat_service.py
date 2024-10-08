@@ -13,6 +13,8 @@ class ChatService:
         difficulty = data.get('difficulty', 'Normal')
         scenario = data.get('scenario', 'coffee')
         first = data.get('first', False)
+        
+        # logger.info(f"Request received: method={request.method}, url={request.url}, data={data}")
 
         memory = memory_manager.get_memory(user_id, conversation_id)
         prompt_template = prompt_manager.create_chat_prompt_template(scenario, difficulty, first)

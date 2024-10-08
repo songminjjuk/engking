@@ -27,6 +27,7 @@ pipeline {
                 }
                 success {
                     sh "echo clone success"
+                    sh "ls -al"
                 }
             }
         }
@@ -41,6 +42,8 @@ pipeline {
                 }
                 success {
                     sh "echo compile success"
+                    sh "ls -al"
+
                 }
             }
         }
@@ -122,6 +125,8 @@ pipeline {
                 }
                 success {
                     sh "echo manifest update success"
+                    sh "ls -al"
+
                 }
             }
         }
