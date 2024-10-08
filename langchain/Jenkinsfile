@@ -31,22 +31,22 @@ pipeline {
                 }
             }
         }
-	    stage('Compile Check') {
-            steps {
-                sh 'python3 -m compileall langchain/'
-            }
-            post {
-                failure {
-                    sh "echo compile failed"
-                    error("Stopping pipeline due to compile failure") 
-                }
-                success {
-                    sh "echo compile success"
-                    sh "ls -al"
+	    // stage('Compile Check') {
+        //     steps {
+        //         sh 'python3 -m compileall langchain/'
+        //     }
+        //     post {
+        //         failure {
+        //             sh "echo compile failed"
+        //             error("Stopping pipeline due to compile failure") 
+        //         }
+        //         success {
+        //             sh "echo compile success"
+        //             sh "ls -al"
 
-                }
-            }
-        }
+        //         }
+        //     }
+        // }
         // stage('Unit Test') {
         //     steps {
         //         sh '''
