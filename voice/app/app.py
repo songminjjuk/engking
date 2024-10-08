@@ -58,3 +58,18 @@ async def http_exception_handler(request: Request, e: HTTPException):
     end_time = time.time()
     duration = (end_time - start_time) * 1000  # 밀리초로 변환
     logger.error(f"HTTPException occurred: {str(e.detail)}, duration={duration:.2f}ms")
+
+# 상태 체크에 대한 예외 처리
+@app.middleware("http")
+async def log_status_middleware(request: Request, call_next):
+    if request.url.path == "/status":
+        response = await call_next(request)
+        if response.status_code != 200:
+            # 문제 발생 시에만 로그 남김
+            start_time = time.time()
+            end_time = time.time()
+            duration = (end_time - start_time) * 1000  # 밀리초로 변환
+            logger.error(f"Status check failed: status={response.status_code}, duration={duration:.2f}ms")
+        return response
+    else:
+        return await call_next(request)
