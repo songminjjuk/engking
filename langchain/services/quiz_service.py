@@ -20,7 +20,7 @@ class QuizService:
             user_input = data.get('input', 'Please give me a quiz question.')
             first = data.get('first', False)
             
-            logger.info(f"Request received: method=POST, url=/chat") #data = {data}
+            logger.info(f"Request received: method=POST, url=/quiz") #data = {data}
 
             memory = memory_manager.get_memory(user_id, conversation_id)
             prompt_template = prompt_manager.create_quiz_prompt_template(quiz_type, difficulty, first)
