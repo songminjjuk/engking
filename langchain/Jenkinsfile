@@ -27,7 +27,6 @@ pipeline {
                 }
                 success {
                     sh "echo clone success"
-                    sh "ls -al"
                 }
             }
         }
