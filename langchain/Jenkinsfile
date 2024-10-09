@@ -53,13 +53,14 @@ pipeline {
                         sh '''
                         python3 -m venv venv
                         . venv/bin/activate
-                        pip3 install fastapi
+                        pip3 install fastapi httpx
                         python3 -m unittest langchain/test_main.py
                         '''
                     }
                     else {
                         '''
                         . venv/bin/activate
+                        pip3 install fastapi httpx
                         python3 -m unittest langchain/test_main.py
                         '''
                     }
