@@ -48,6 +48,20 @@ pipeline {
         }
         stage('Unit Test') {
             steps {
+                script {
+                    if(!fileExists('venv/bin/activate')){
+                        sh '''
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip3 install fastapi
+                        '''
+                    }
+                    else {
+                        '''
+                        . venv/bin/activate
+                        '''
+                    }
+                }
                 sh 'python3 -m unittest langchain/test_main.py'
             }
             post {
@@ -57,6 +71,7 @@ pipeline {
                 }
                 success {
                     sh "echo unittest success"
+                    sh "deactivate"
                 }
             }
         }
