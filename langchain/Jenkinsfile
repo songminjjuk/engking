@@ -30,39 +30,36 @@ pipeline {
                 }
             }
         }
-	    // stage('Compile Check') {
-        //     steps {
-        //         sh 'python3 -m compileall langchain/'
-        //     }
-        //     post {
-        //         failure {
-        //             sh "echo compile failed"
-        //             error("Stopping pipeline due to compile failure") 
-        //         }
-        //         success {
-        //             sh "echo compile success"
-        //             sh "ls -al"
+	    stage('Compile Check') {
+            steps {
+                sh 'python3 -m compileall langchain/'
+            }
+            post {
+                failure {
+                    sh "echo compile failed"
+                    error("Stopping pipeline due to compile failure") 
+                }
+                success {
+                    sh "echo compile success"
+                    sh "ls -al"
 
-        //         }
-        //     }
-        // }
-        // stage('Unit Test') {
-        //     steps {
-        //         sh '''
-        //         . venv/bin/activate
-        //         pytest langchain/test/
-        //         '''
-        //     }
-        //     post {
-        //         failure {
-        //             sh "echo tests failed"
-        //             error("Stopping pipeline due to unit test failure")
-        //         }
-        //         success {
-        //             sh "echo tests passed"
-        //         }
-        //     }
-        // }
+                }
+            }
+        }
+        stage('Unit Test') {
+            steps {
+                sh 'python3 -m unittest langchain/test_main.py'
+            }
+            post {
+                failure {
+                    sh "echo unittest failed"
+                    error("Stopping pipeline due to unit test failure")
+                }
+                success {
+                    sh "echo unittest success"
+                }
+            }
+        }
         stage('docker image build') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${currentBuild.number} -f langchain/Dockerfile langchain/"
