@@ -72,7 +72,6 @@ pipeline {
                 }
                 success {
                     sh "echo unittest success"
-                    sh "deactivate"
                 }
             }
         }
