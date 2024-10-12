@@ -17,6 +17,12 @@ public class HealthController {
 
     @GetMapping("")
     public ResponseEntity<Void> healthCheck() {
-        return ResponseEntity.ok().build();  // 200 응답 코드 반환
+       try {
+           return ResponseEntity.ok().build();  // 200 응답 코드 반환
+
+       } catch (Exception e) {
+           log.error("Error occurred during health check: {}", e.getMessage());
+           return ResponseEntity.status(500).build();
+       }
     }
 }

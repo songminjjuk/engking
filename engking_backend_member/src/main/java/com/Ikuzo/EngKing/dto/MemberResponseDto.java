@@ -2,6 +2,7 @@ package com.Ikuzo.EngKing.dto;
 
 import com.Ikuzo.EngKing.constant.Authority;
 import com.Ikuzo.EngKing.entity.Member;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL) //null인 필드는 json에서 제외
 public class MemberResponseDto {
     private Long id;
     private String email;

@@ -50,13 +50,15 @@ public class S3Service {
 
 
             PresignedGetObjectRequest presignedRequest=s3Presigner.presignGetObject(presignRequest);
-            logger.info("Presigned URL: [{}]", presignedRequest.url().toString());
-            logger.info("HTTP method: [{}]", presignedRequest.httpRequest().method());
+
+            logger.info("Successfully created presigned GET URL for bucket: [{}], key: [{}]", bucketName, keyName);
+            logger.info("Presigned URL: [{}], HTTP method: [{}]", presignedRequest.url().toString(), presignedRequest.httpRequest().method());
 
             return presignedRequest.url().toString();
         }
         catch(Exception e) {
-            return "null";
+            logger.error("Failed to create presigned GET URL for bucket: [{}], key: [{}]. Error message: {}", bucketName, keyName, e.getMessage(), e);
+            return "failed";
         }
     }
     //update 시 접근할 url 생성하기
@@ -81,16 +83,19 @@ public class S3Service {
             PresignedPutObjectRequest presignedRequest=s3Presigner.presignPutObject(presignRequest);
 
             String URL=presignedRequest.url().toString();
+            /*
             logger.info("content-type IS ||||||||||||||||||||||||||||||||||||||||||||: [{}]", objectRequest.contentType());
-            logger.info("HTTP method: [{}]", presignedRequest.httpRequest().method());
+            logger.info("HTTP method: [{}]", presignedRequest.httpRequest().method());*/
 
-            return URL;
-//
+            logger.info("Successfully created presigned PUT URL for bucket: [{}], key: [{}]", bucketName, keyName);
+            logger.info("Presigned URL: [{}], HTTP method: [{}]", presignedRequest.url().toString(), presignedRequest.httpRequest().method());
+
+            return presignedRequest.url().toString();
         }
 
         catch(Exception e) {
             e.printStackTrace();
-            return "null";
+            return "failed ";
         }
 
 

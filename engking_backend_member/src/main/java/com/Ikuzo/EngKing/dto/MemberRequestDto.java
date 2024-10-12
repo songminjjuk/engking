@@ -4,6 +4,7 @@ package com.Ikuzo.EngKing.dto;
 import com.Ikuzo.EngKing.constant.Authority;
 import com.Ikuzo.EngKing.constant.Existence;
 import com.Ikuzo.EngKing.entity.Member;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL) //null인 필드는 json에서 제외
 public class MemberRequestDto {
     private Long id;
     private String email;
