@@ -52,7 +52,8 @@ class NextQuestionResponse(BaseModel):
     chatRoomId: str
     messageId: str
     audioUrl: str
-
+    messageText: str
+    
 @router.post("/api/first-question/", response_model=FirstQuestionResponse)
 async def create_first_question(request: Request, body: FirstQuestionRequest):
     # 요청 시작 시각 기록
