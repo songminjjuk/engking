@@ -144,7 +144,8 @@ async def handle_next_question(request: Request, body: NextQuestionRequest):
             memberId=next_question_response['memberId'],
             chatRoomId=next_question_response['chatRoomId'],
             messageId=next_question_response['messageId'],
-            audioUrl=audio_url
+            audioUrl=audio_url,
+            messageText=messageText  
         )
     except HTTPException as e:
         # 요청 처리 시간 기록
