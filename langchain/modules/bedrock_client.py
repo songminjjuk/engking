@@ -13,5 +13,7 @@ def initialize_bedrock_client(model_id, region_name):
 
 bedrock_llm = initialize_bedrock_client(
     model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",
+    #model_id = "anthropic.claude-3-haiku-20240307-v1:0"
     region_name=settings.AWS_REGION
 )
+#bedrock_haiku_llm = initalize_bedrock_clinet()
