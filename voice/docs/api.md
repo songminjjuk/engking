@@ -70,7 +70,8 @@
       "memberId": "string",
       "chatRoomId": "string",
       "messageId": "string",
-      "audioUrl": "string"
+      "audioUrl": "string",
+      "messageText": "string",
     }
     ```
 
