@@ -19,7 +19,6 @@ pipeline {
             steps {
                 checkout([$class: 'GitSCM', branches: [[name: '*/langchain']], extensions: [],
                 userRemoteConfigs: [[credentialsId: GITCREDENTIAL, url: GITWEBADD]]])
-
             }
             post {
                 failure {
@@ -30,35 +29,35 @@ pipeline {
                 }
             }
         }
-	    stage('Compile Check') {
+
+        stage('Compile Check') {
             steps {
                 sh 'python3 -m compileall langchain/'
             }
             post {
                 failure {
                     sh "echo compile failed"
-                    error("Stopping pipeline due to compile failure") 
+                    error("Stopping pipeline due to compile failure")
                 }
                 success {
                     sh "echo compile success"
                     sh "ls -al"
-
                 }
             }
         }
+
         stage('Unit Test') {
             steps {
                 script {
-                    if(!fileExists('venv/bin/activate')){
+                    if (!fileExists('venv/bin/activate')) {
                         sh '''
                         python3 -m venv venv
                         . venv/bin/activate
                         pip3 install fastapi httpx
                         python3 -m unittest langchain/test_main.py
                         '''
-                    }
-                    else {
-                        '''
+                    } else {
+                        sh '''
                         . venv/bin/activate
                         pip3 install fastapi httpx
                         python3 -m unittest langchain/test_main.py
@@ -76,7 +75,8 @@ pipeline {
                 }
             }
         }
-        stage('docker image build') {
+
+        stage('Docker Image Build') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${currentBuild.number} -f langchain/Dockerfile langchain/"
                 sh "docker build -t ${IMAGE_NAME}:latest -f langchain/Dockerfile langchain/"
@@ -90,18 +90,15 @@ pipeline {
                 }
             }
         }
-        stage('docker image push') {
-            steps {
-                script{
-                    // cleanup current user docker credentials
-                    sh 'rm -f ~/.dockercfg ~/.docker/config.json || true'
-                    
-                   
-                    docker.withRegistry("https://${ECR_PATH}", "ecr:${REGION}:${AWS_CREDENTIAL_NAME}") {
-                      docker.image("${IMAGE_NAME}:${BUILD_NUMBER}").push()
-                      docker.image("${IMAGE_NAME}:latest").push()
-                    }
 
+        stage('Docker Image Push') {
+            steps {
+                script {
+                    sh 'aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_PATH}'
+                    docker.withRegistry("https://${ECR_PATH}") {
+                        docker.image("${IMAGE_NAME}:${BUILD_NUMBER}").push()
+                        docker.image("${IMAGE_NAME}:latest").push()
+                    }
                 }
             }
             post {
@@ -117,6 +114,7 @@ pipeline {
                 }
             }
         }
+
         stage('EKS manifest file update') {
             steps {
                 git credentialsId: GITCREDENTIAL, url: GITSSHADD, branch: 'main'
@@ -138,7 +136,6 @@ pipeline {
                 success {
                     sh "echo manifest update success"
                     sh "ls -al"
-
                 }
             }
         }

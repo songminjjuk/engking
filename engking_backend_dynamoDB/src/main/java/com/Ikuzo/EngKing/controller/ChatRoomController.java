@@ -2,40 +2,63 @@ package com.Ikuzo.EngKing.controller;
 
 import com.Ikuzo.EngKing.dto.ChatRoomRequestDto;
 import com.Ikuzo.EngKing.dto.ChatRoomResponseDto;
-import com.Ikuzo.EngKing.entity.ChatRoom;
-import com.Ikuzo.EngKing.entity.ChatMessages;
 import com.Ikuzo.EngKing.service.ChatRoomService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+@Slf4j
 @RestController
-@RequestMapping("/api/chatroom")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+@RequestMapping("/chatroom")
 public class ChatRoomController {
 
-    @Autowired
-    private ChatRoomService chatRoomService;
+    private final ChatRoomService chatRoomService;
 
-    @PostMapping("/create")
-    public ResponseEntity<ChatRoomResponseDto> createChatRoom(@RequestBody ChatRoomRequestDto chatRoomRequestDto) {
+    @PostMapping("/chatroomlist")
+    public ResponseEntity<List<ChatRoomResponseDto>> selectChatRoomsByMemberId(@RequestBody ChatRoomRequestDto chatRoomRequestDto) {
         String memberId = chatRoomRequestDto.getMemberId();
-        String topic = chatRoomRequestDto.getTopic();
-        String difficulty = chatRoomRequestDto.getDifficulty();
 
-        ChatRoomResponseDto chatRoomResponseDto = chatRoomService.createChatRoom(memberId, topic, difficulty);
+        try {
+            // 로그 기록 (요청 정보)
+            log.info("Request received: memberId={}", memberId);
 
-        if (chatRoomResponseDto.isSuccess())
-            return ResponseEntity.status(HttpStatus.CREATED).body(chatRoomResponseDto);
-        else
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(chatRoomResponseDto);
+            // 서비스 호출하여 채팅방 리스트 가져오기
+            List<ChatRoomResponseDto> chatRoomResponseDtoLists = chatRoomService.selectChatRoomsByMemberId(memberId);
+
+            log.info("Response successful: status=OK, memberId={}, totalChatRooms={}", memberId, chatRoomResponseDtoLists.size());
+            return ResponseEntity.status(HttpStatus.OK).body(chatRoomResponseDtoLists);
+
+        } catch (Exception e) {
+            log.error("Error processing request: memberId={}, error={}", memberId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    @PostMapping("/message/{chatRoomId}")
-    public ChatMessages addMessageToChatRoom(@PathVariable String chatRoomId, @RequestBody ChatMessages messages) {
-        return chatRoomService.addMessageToChatRoom(chatRoomId, messages);
+    @PostMapping("/deletechatroom")
+    public ResponseEntity<ChatRoomResponseDto> deleteChatRoomByChatRoomId(@RequestBody ChatRoomRequestDto chatRoomRequestDto) {
+        String memberId = chatRoomRequestDto.getMemberId();
+        String chatRoomId = chatRoomRequestDto.getChatRoomId();
+
+        try {
+            // 로그 기록 (요청 정보)
+            log.info("Request to delete chat room: memberId={}, chatRoomId={}", memberId, chatRoomId);
+
+            // 채팅방 삭제
+            ChatRoomResponseDto chatRoomResponseDto = chatRoomService.deleteChatRoomByChatRoomIdAndMemberId(chatRoomId, memberId);
+
+            log.info("Chat room deleted successfully: status=OK, memberId={}, chatRoomId={}", memberId, chatRoomId);
+            return ResponseEntity.status(HttpStatus.OK).body(chatRoomResponseDto);
+
+        } catch (Exception e) {
+            log.error("Error deleting chat room: memberId={}, chatRoomId={}, error={}", memberId, chatRoomId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-
-    // 추가적인 엔드포인트 정의...
 }

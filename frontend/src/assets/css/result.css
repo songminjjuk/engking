@@ -1,33 +1,41 @@
 .result-container {
     display: flex;
-    flex-direction: column;
     justify-content: center;
-    align-items: center;
-    min-height: 70vh;
-    background-color: #fff;
     padding: 20px;
-    box-sizing: border-box;
-    font-family: 'Arial', sans-serif;
 }
 
-h2 {
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 20px;
+.result-section {
+    background-color: #f7f5f8;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    width: 50%;
+    text-align: left;
+    margin: 10px;
+}
+
+.res_title {
+    font-size: 30px;
+    color: #f7a8c5;
+    margin-bottom: 30px;
     text-align: center;
+    font-weight: bold;
+    width: 100%; /* Ensure it takes full width for proper centering */
 }
 
-p {
+.result-container {
     font-size: 1.25rem;
     color: #666;
     margin: 10px 0;
-    text-align: center;
+    text-align: left; /* Align text to the left */
+    width: 100%; /* Ensure paragraphs use full width */
+    margin-bottom: 10px;
 }
 
 .audio-player-container {
     margin-top: 30px;
     text-align: center;
-    width: 100%;
+    width: 100%; /* Ensure it takes full width for centering audio player */
 }
 
 .audio-player-container h3 {
@@ -82,4 +90,41 @@ audio {
 
 .send-button:active {
     background-color: #f7a8c5;
+}
+
+
+
+.feedback-section {
+    margin-top: 20px;
+    
+}
+
+.feedback-item {
+    margin-bottom: 2px;
+    font-size: 18px;
+    line-height: 1.5;
+    
+}
+
+/* Divider between numbered sections */
+.divider {
+    border: 0;
+    border-top: 1px solid #ccc;
+    
+}
+
+/* Spacer for additional line breaks */
+.spacer {
+    height: 5px;
+}
+
+.conv-divider {
+    border: 0;
+}
+
+.result-section p {
+    font-size: 1.25rem;
+    color: #555;
+    text-align: left;
+    margin-bottom: 10px;
 }

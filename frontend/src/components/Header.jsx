@@ -26,10 +26,11 @@ const Header = (props) => {
     <header id="headerType" className="header__wrap">
       <div className="header__inner">
         <div className="header__logo">
-          <NavLink to="/">이쿠조 <em>site</em></NavLink>
+          <NavLink to="/">이쿠조 <em>잉킹 EngKing</em></NavLink>
         </div>
         <nav className="header__menu">
           <ul>
+            <li><NavLink to="/info">서비스 소개</NavLink></li>
             <li><NavLink to="/quizdiffi">퀴즈</NavLink></li>
             <li><NavLink to="/about">회화</NavLink></li>
             {email && (

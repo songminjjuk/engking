@@ -1,0 +1,99 @@
+pipeline {
+    agent any
+    environment {
+        GITNAME = 'hansubbbb'
+        GITEMAIL = 'hansubin0039@gmail.com'
+        GITWEBADD = 'https://github.com/acs5-4/engking.git'
+        GITSSHADD = 'git@github.com:acs5-4/final-argocd.git'
+
+        AWS_CREDENTIAL_NAME = 'aws_cre'
+        ECR_PATH = '355627705292.dkr.ecr.ap-northeast-1.amazonaws.com'
+        IMAGE_NAME = '355627705292.dkr.ecr.ap-northeast-1.amazonaws.com/engking-member'
+        REGION = 'ap-northeast-1'
+
+        GITCREDENTIAL = 'git_cre'
+        DOCKERHUBCREDENTIAL = 'docker_cre'
+    }
+    stages {
+        stage('Checkout Github') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/backend_member']], extensions: [],
+                userRemoteConfigs: [[credentialsId: GITCREDENTIAL, url: GITWEBADD]]])
+
+            }
+            post {
+                failure {
+                    sh "echo clone failed"
+                }
+                success {
+                    sh "echo clone success"
+                }
+            }
+        }
+        stage('docker image build') {
+            steps {
+                sh "docker build -t ${IMAGE_NAME}:${currentBuild.number} -f engking_backend_member/Dockerfile engking_backend_member/"
+                sh "docker build -t ${IMAGE_NAME}:latest -f engking_backend_member/Dockerfile engking_backend_member/"
+            }
+            post {
+                failure {
+                    sh "echo image build failed"
+                }
+                success {
+                    sh "echo image build success"
+                }
+            }
+        }
+        stage('docker image push') {
+            steps {
+                script{
+                    // cleanup current user docker credentials
+                    sh 'rm -f ~/.dockercfg ~/.docker/config.json || true'
+                    
+                   
+                    docker.withRegistry("https://${ECR_PATH}", "ecr:${REGION}:${AWS_CREDENTIAL_NAME}") {
+                      docker.image("${IMAGE_NAME}:${BUILD_NUMBER}").push()
+                      docker.image("${IMAGE_NAME}:latest").push()
+                    }
+
+                }
+            }
+            post {
+                failure {
+                    sh "docker image rm -f ${IMAGE_NAME}:${currentBuild.number}"
+                    sh "docker image rm -f ${IMAGE_NAME}:latest"
+                    sh "echo push failed"
+                }
+                success {
+                    sh "docker image rm -f ${IMAGE_NAME}:${currentBuild.number}"
+                    sh "docker image rm -f ${IMAGE_NAME}:latest"
+                    sh "echo push success"
+                }
+            }
+        }
+        stage('EKS manifest file update') {
+            steps {
+                git credentialsId: GITCREDENTIAL, url: GITSSHADD, branch: 'main'
+                sh "git config --global user.email ${GITEMAIL}"
+                sh "git config --global user.name ${GITNAME}"
+                sh "sed -i 's@${IMAGE_NAME}:.*@${IMAGE_NAME}:${currentBuild.number}@g' engking_backend_member/s-back-dep.yaml"
+
+                sh "git add ."
+                sh "git branch -M main"
+                sh "git commit -m 'fixed tag ${currentBuild.number}'"
+                sh "git remote remove origin"
+                sh "git remote add origin ${GITSSHADD}"
+                sh "git push origin main"
+            }
+            post {
+                failure {
+                    sh "echo manifest update failed"
+                }
+                success {
+                    sh "echo manifest update success"
+                }
+            }
+        }
+
+    }
+}
