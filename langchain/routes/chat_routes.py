@@ -8,5 +8,4 @@ router = APIRouter()
 async def chat_endpoint(request: Request):
     data = await request.json()
     response_content = ChatService.process_chat(data)
-    # return JSONResponse(content=response_content)
     return response_content
