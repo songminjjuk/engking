@@ -24,7 +24,7 @@ class QuizService:
 
             memory = memory_manager.get_memory(user_id, conversation_id)
             prompt_template = prompt_manager.create_quiz_prompt_template(quiz_type, difficulty, first)
-            conversation = ConversationChain(llm=bedrock_llm, memory=memory, prompt=prompt_template, verbose=True)
+            conversation = ConversationChain(llm=bedrock_llm2, memory=memory, prompt=prompt_template, verbose=True)
             response_content = conversation.predict(input=user_input)
 
             memory_manager.delete_memory(user_id, conversation_id)
